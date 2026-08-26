@@ -15,9 +15,11 @@ import {
   Shirt,
   Layers,
   Upload,
+  X,
 } from 'lucide-react';
 import { Button, Input, Select, ImageUploader, useToast, Loader, Pagination } from '../../components/ui';
 import { adminService } from '../../services/adminService';
+import { contentService } from '../../services/contentService';
 import { Product, Category, Fabric } from '@stitchx/shared';
 
 export function AdminProductsPage() {
@@ -43,6 +45,19 @@ export function AdminProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
+  // Dynamic Custom Showcase Sections State
+  const [customSections, setCustomSections] = useState<any[]>([]);
+  const [showSectionModal, setShowSectionModal] = useState(false);
+  const [editingSection, setEditingSection] = useState<any | null>(null);
+  const [sectionForm, setSectionForm] = useState({
+    name: '',
+    code: '',
+    badgeText: '',
+    description: '',
+    badgeColor: 'amber',
+    isActive: true,
+  });
+
   // Form State for Products
   const [formData, setFormData] = useState({
     name: '',
@@ -65,6 +80,7 @@ export function AdminProductsPage() {
     isNew: true,
     isOnSale: false,
     isDeal: false,
+    tags: [] as string[],
     colors: [] as Array<{ name: string; hex: string; image?: string; images?: Array<string | { url: string; altText?: string }> }>,
     images: [] as { url: string; altText?: string; isPrimary?: boolean }[],
     seo: {
@@ -94,6 +110,9 @@ export function AdminProductsPage() {
       setCategories(catsRes || []);
       setFabrics(fabsRes || []);
       setCustomizationGroups(groupsRes || []);
+
+      const secs = await contentService.getCustomSections().catch(() => []);
+      setCustomSections(secs || []);
     } catch (_err) {
       toast('error', 'Error', 'Failed to load catalog data.');
     } finally {
@@ -129,6 +148,7 @@ export function AdminProductsPage() {
       isNew: true,
       isOnSale: true,
       isDeal: false,
+      tags: [],
       colors: [
         { name: 'Navy Blue', hex: '#1c2536', image: '' },
         { name: 'Classic Khaki', hex: '#8c7b6c', image: '' },
@@ -196,6 +216,7 @@ export function AdminProductsPage() {
       isNew: product.isNew ?? true,
       isOnSale: product.isOnSale ?? Boolean(product.compareAtPrice && product.compareAtPrice > product.basePrice),
       isDeal: (product as any).isDeal || false,
+      tags: (product as any).tags || (product as any).customSections || [],
       colors: parsedColors,
       images:
         product.images && product.images.length > 0
@@ -228,6 +249,36 @@ export function AdminProductsPage() {
       },
     });
     setViewMode('editor');
+  };
+
+  const handleSaveSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sectionForm.name.trim()) return;
+
+    const code =
+      sectionForm.code.trim().toLowerCase().replace(/[^a-z0-9_]+/g, '_') ||
+      sectionForm.name.toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+    const badgeText = sectionForm.badgeText.trim() || sectionForm.name.trim();
+
+    let updated = [...customSections];
+    if (editingSection) {
+      updated = updated.map((s) =>
+        s.id === editingSection.id ? { ...s, ...sectionForm, code, badgeText } : s,
+      );
+    } else {
+      updated.push({
+        id: `sec-${Date.now()}`,
+        ...sectionForm,
+        code,
+        badgeText,
+      });
+    }
+
+    setCustomSections(updated);
+    await contentService.saveCustomSections(updated);
+    setShowSectionModal(false);
+    setEditingSection(null);
+    toast('success', 'Section Saved', `Showcase section "${sectionForm.name}" saved.`);
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
@@ -1083,6 +1134,114 @@ export function AdminProductsPage() {
                     </div>
                   </label>
                 </div>
+
+                {/* Dynamic Custom Showcase Sections & Promotional Collections */}
+                <div className="pt-6 border-t border-slate-200/80 space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-amber-600" /> Custom Dynamic Showcase Sections (Diwali Sale, Festive Offers, etc.)
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Create, edit, or select custom promotional sections for this garment.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingSection(null);
+                        setSectionForm({ name: '', code: '', badgeText: '', description: '', badgeColor: 'amber', isActive: true });
+                        setShowSectionModal(true);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" /> Add / Manage Custom Sections
+                    </button>
+                  </div>
+
+                  {customSections.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {customSections.map((sec) => {
+                        const isSelected = (formData.tags || []).includes(sec.code);
+                        return (
+                          <div
+                            key={sec.id}
+                            className={`p-4 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                              isSelected
+                                ? 'bg-amber-50/60 border-amber-300 shadow-xs'
+                                : 'bg-slate-50 border-slate-200 hover:border-amber-300'
+                            }`}
+                          >
+                            <label className="flex items-start gap-3 cursor-pointer flex-1">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  const currentTags = formData.tags || [];
+                                  const newTags = e.target.checked
+                                    ? [...currentTags, sec.code]
+                                    : currentTags.filter((t: string) => t !== sec.code);
+                                  setFormData({ ...formData, tags: newTags });
+                                }}
+                                className="w-4 h-4 text-amber-600 rounded mt-0.5"
+                              />
+                              <div>
+                                <span className="font-bold text-xs text-slate-900 block">{sec.name}</span>
+                                <span className="text-[11px] text-slate-500 block">
+                                  {sec.description || `Shows badge: ${sec.badgeText}`}
+                                </span>
+                                <span className="inline-block mt-2 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300">
+                                  {sec.badgeText}
+                                </span>
+                              </div>
+                            </label>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingSection(sec);
+                                  setSectionForm({
+                                    name: sec.name || '',
+                                    code: sec.code || '',
+                                    badgeText: sec.badgeText || '',
+                                    description: sec.description || '',
+                                    badgeColor: sec.badgeColor || 'amber',
+                                    isActive: sec.isActive ?? true,
+                                  });
+                                  setShowSectionModal(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-amber-700 hover:bg-white rounded-lg transition-colors"
+                                title="Edit Section"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!confirm(`Delete custom section "${sec.name}"?`)) return;
+                                  const updated = customSections.filter((s) => s.id !== sec.id);
+                                  setCustomSections(updated);
+                                  await contentService.saveCustomSections(updated);
+                                  toast('info', 'Section Deleted', `"${sec.name}" removed.`);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
+                                title="Delete Section"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center text-xs text-slate-500 space-y-2">
+                      <p className="font-semibold text-slate-700">No custom showcase sections created yet.</p>
+                      <p>Click "+ Add / Manage Custom Sections" above to create sections like "Diwali Sale", "Summer Luxury", "Festive Edition", etc.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1390,6 +1549,89 @@ export function AdminProductsPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Modal for Creating / Editing Dynamic Showcase Sections */}
+      {showSectionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-amber-600" />
+                {editingSection ? 'Edit Showcase Section' : 'Create New Showcase Section'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowSectionModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSection} className="space-y-4">
+              <Input
+                label="Section Title (e.g. Diwali Sale) *"
+                value={sectionForm.name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  const code = name.toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+                  setSectionForm({
+                    ...sectionForm,
+                    name,
+                    code: editingSection ? sectionForm.code : code,
+                    badgeText: editingSection ? sectionForm.badgeText : name,
+                  });
+                }}
+                placeholder="e.g. Diwali Sale"
+                required
+              />
+
+              <Input
+                label="System Identifier / Tag Code *"
+                value={sectionForm.code}
+                onChange={(e) =>
+                  setSectionForm({
+                    ...sectionForm,
+                    code: e.target.value.toLowerCase().replace(/[^a-z0-9_]+/g, '_'),
+                  })
+                }
+                placeholder="e.g. diwali_sale"
+                required
+              />
+
+              <Input
+                label="Product Card Badge Text *"
+                value={sectionForm.badgeText}
+                onChange={(e) => setSectionForm({ ...sectionForm, badgeText: e.target.value })}
+                placeholder="e.g. Diwali Special"
+                required
+              />
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Section Description
+                </label>
+                <textarea
+                  rows={2}
+                  value={sectionForm.description}
+                  onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })}
+                  placeholder="e.g. Festive promotional deals and exclusive bespoke tailoring"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowSectionModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="gold" size="sm" leftIcon={<Save className="w-4 h-4" />}>
+                  {editingSection ? 'Update Section' : 'Create Section'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

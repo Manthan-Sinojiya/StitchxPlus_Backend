@@ -266,6 +266,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               Special Deal
             </span>
           )}
+          {Array.isArray((product as any).tags) && (product as any).tags.map((tag: string) => (
+            <span key={tag} className="bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs backdrop-blur-xs">
+              {tag.replace(/_/g, ' ')}
+            </span>
+          ))}
           {product.isCustomizable !== false && (
             <span className="bg-white/90 text-navy-900 text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs backdrop-blur-xs border border-neutral-200">
               Bespoke

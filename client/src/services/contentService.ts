@@ -166,4 +166,32 @@ export const contentService = {
     const res = await apiClient.delete<void>(`/admin/content/pages/${id}`);
     if (!res.success) throw new Error(res.error?.message || 'Failed to delete page');
   },
+
+  getCustomSections: async (): Promise<any[]> => {
+    try {
+      const data = await contentService.getBlockContent('custom_publication_sections');
+      if (Array.isArray(data) && data.length > 0) {
+        localStorage.setItem('stitchx_custom_sections', JSON.stringify(data));
+        return data;
+      }
+    } catch (_e) {}
+    const saved = localStorage.getItem('stitchx_custom_sections');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (_e) {}
+    }
+    return [
+      { id: 'sec-diwali', name: 'Diwali Sale', code: 'diwali_sale', badgeText: 'Diwali Special', description: 'Festive promotional offers & discounts', badgeColor: 'amber', isActive: true },
+      { id: 'sec-summer', name: 'Summer Luxury', code: 'summer_luxury', badgeText: 'Summer Edition', description: 'Lightweight linen & silk bespoke suits', badgeColor: 'blue', isActive: true },
+    ];
+  },
+
+  saveCustomSections: async (sections: any[]): Promise<void> => {
+    localStorage.setItem('stitchx_custom_sections', JSON.stringify(sections));
+    try {
+      await contentService.updateBlockContent('custom_publication_sections', sections);
+    } catch (_e) {}
+    window.dispatchEvent(new CustomEvent('custom-sections-updated'));
+  },
 };

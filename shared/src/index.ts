@@ -148,12 +148,23 @@ export interface Product {
   isOnSale?: boolean;
   isSale?: boolean;
   isDeal?: boolean;
+  customSections?: string[];
   rating: number;
   numReviews: number;
   seo?: ProductSEO;
   shipping?: ProductShipping;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CustomSection {
+  id: string;
+  name: string;
+  code: string;
+  badgeText: string;
+  description?: string;
+  badgeColor?: string;
+  isActive: boolean;
 }
 
 export interface PaginationMeta {

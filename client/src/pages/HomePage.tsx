@@ -106,12 +106,13 @@ const SAMPLE_PRODUCTS = [
 
 export function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [activeTab, setActiveTab] = useState<'new' | 'bestsellers' | 'sale' | 'deals'>('new');
+  const [activeTab, setActiveTab] = useState<string>('new');
 
   const [homeData, setHomeData] = useState<CMSHomeData | null>(null);
   const [faqItems, setFaqItems] = useState<CMSFAQItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [fetchedProducts, setFetchedProducts] = useState<Product[]>([]);
+  const [customSections, setCustomSections] = useState<any[]>([]);
 
   // Hero Slider Autoplay
   useEffect(() => {
@@ -145,7 +146,14 @@ export function HomePage() {
           setFetchedProducts(list);
         }
       }
+      contentService.getCustomSections().then((secs) => setCustomSections(secs || [])).catch(() => {});
     });
+
+    const handleSectionsUpdate = () => {
+      contentService.getCustomSections().then((secs) => setCustomSections(secs || [])).catch(() => {});
+    };
+    window.addEventListener('custom-sections-updated', handleSectionsUpdate);
+    return () => window.removeEventListener('custom-sections-updated', handleSectionsUpdate);
   }, []);
 
   // Filter product cards based on active tab
@@ -155,7 +163,10 @@ export function HomePage() {
     if (activeTab === 'bestsellers') return p.isFeatured || p.rating >= 4.8;
     if (activeTab === 'sale') return p.isOnSale || p.isSale || (p.compareAtPrice && p.compareAtPrice > p.basePrice);
     if (activeTab === 'deals') return p.isDeal || p.isOnSale;
-    return true;
+
+    // Filter by custom section code or tag
+    const tags = p.tags || p.customSections || [];
+    return tags.includes(activeTab);
   });
 
   // Priority: 1. homeData.slides if present; 2. homeData.hero if image is valid non-legacy; 3. HERO_SLIDES
@@ -304,6 +315,19 @@ export function HomePage() {
           >
             Special Deals
           </button>
+          {customSections.map((sec) => (
+            <button
+              key={sec.id || sec.code}
+              onClick={() => setActiveTab(sec.code)}
+              className={`text-base sm:text-lg pb-3 transition-colors ${
+                activeTab === sec.code
+                  ? 'font-bold text-amber-900 border-b-2 border-amber-600 -mb-[2px]'
+                  : 'font-normal text-neutral-500 hover:text-neutral-900'
+              }`}
+            >
+              {sec.name}
+            </button>
+          ))}
         </div>
 
         {/* Product Grid (All Card UI showing matching Image 2) */}
