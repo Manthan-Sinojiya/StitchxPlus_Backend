@@ -49,26 +49,28 @@ const COLOR_HEX_MAP: Record<string, string> = {
   green: '#166534',
 };
 
-function parseColors(colors?: any[]): Array<{ name: string; hex: string; image?: string }> {
+function parseColors(colors?: any[]): Array<{ name: string; hex: string; image?: string; images?: string[] }> {
   if (!colors || !Array.isArray(colors) || colors.length === 0) {
     return [];
   }
 
   return colors.map((c, i) => {
     if (typeof c === 'object' && c !== null) {
+      const rawImgs = Array.isArray(c.images) ? c.images.filter((u: any) => typeof u === 'string' && u.trim()) : [];
       return {
         name: c.name || `Color ${i + 1}`,
         hex: c.hex || COLOR_HEX_MAP[c.name?.toLowerCase()] || '#2b2d31',
-        image: c.image,
+        image: c.image || rawImgs[0] || '',
+        images: rawImgs.length > 0 ? rawImgs : (c.image ? [c.image] : []),
       };
     }
     if (typeof c === 'string') {
       const isHex = c.startsWith('#');
       const name = isHex ? `Color ${i + 1}` : c;
       const hex = isHex ? c : COLOR_HEX_MAP[c.toLowerCase()] || '#2b2d31';
-      return { name, hex };
+      return { name, hex, image: '', images: [] };
     }
-    return { name: `Color ${i + 1}`, hex: '#2b2d31' };
+    return { name: `Color ${i + 1}`, hex: '#2b2d31', image: '', images: [] };
   });
 }
 
@@ -124,7 +126,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const activeSwatch = colorList[activeColorIndex];
 
   // Specific image for selected color swatch
-  const colorSpecificImage = activeSwatch?.image || (
+  const colorSpecificImage = activeSwatch?.image || activeSwatch?.images?.[0] || (
     rawImages[activeColorIndex]
       ? (typeof rawImages[activeColorIndex] === 'string'
           ? (rawImages[activeColorIndex] as string)

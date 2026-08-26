@@ -63,7 +63,7 @@ export function AdminProductsPage() {
     isFeatured: false,
     isNew: true,
     isOnSale: false,
-    colors: [] as Array<{ name: string; hex: string; image?: string }>,
+    colors: [] as Array<{ name: string; hex: string; image?: string; images?: string[] }>,
     images: [] as { url: string; altText?: string; isPrimary?: boolean }[],
     seo: {
       metaTitle: '',
@@ -590,7 +590,7 @@ export function AdminProductsPage() {
                         Color Swatches & Color-Specific Garment Imagery
                       </h4>
                       <p className="text-[11px] text-slate-500">
-                        Add color swatches for this garment. Selecting a swatch on the Product Card automatically displays that color's image!
+                        Add color swatches and attach specific photos for each color. Selecting a color swatch on the storefront displays all photos for that chosen color!
                       </p>
                     </div>
                     <Button
@@ -602,7 +602,7 @@ export function AdminProductsPage() {
                           ...formData,
                           colors: [
                             ...formData.colors,
-                            { name: `Color ${formData.colors.length + 1}`, hex: '#1c2536', image: '' },
+                            { name: `Color ${formData.colors.length + 1}`, hex: '#1c2536', image: '', images: [] },
                           ],
                         })
                       }
@@ -613,81 +613,162 @@ export function AdminProductsPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {formData.colors.map((clr, cIdx) => (
-                      <div key={cIdx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-5 h-5 rounded-full border border-slate-300 shadow-2xs"
-                              style={{ backgroundColor: clr.hex }}
-                            />
-                            <span className="text-xs font-bold text-slate-900">Color Swatch #{cIdx + 1}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = formData.colors.filter((_, i) => i !== cIdx);
-                              setFormData({ ...formData, colors: updated });
-                            }}
-                            className="p-1 text-slate-400 hover:text-red-600 rounded"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <Input
-                            label="Color Name"
-                            value={clr.name}
-                            onChange={(e) => {
-                              const updated = [...formData.colors];
-                              updated[cIdx] = { ...updated[cIdx], name: e.target.value };
-                              setFormData({ ...formData, colors: updated });
-                            }}
-                            placeholder="e.g. Royal Navy"
-                          />
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                              Hex Code
-                            </label>
+                    {formData.colors.map((clr, cIdx) => {
+                      const colorImages = clr.images && clr.images.length > 0 ? clr.images : (clr.image ? [clr.image] : []);
+                      return (
+                        <div key={cIdx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                          <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <input
-                                type="color"
-                                value={clr.hex.startsWith('#') ? clr.hex : '#1c2536'}
-                                onChange={(e) => {
-                                  const updated = [...formData.colors];
-                                  updated[cIdx] = { ...updated[cIdx], hex: e.target.value };
-                                  setFormData({ ...formData, colors: updated });
-                                }}
-                                className="w-9 h-9 p-0.5 rounded-xl border border-slate-200 cursor-pointer bg-white"
+                              <span
+                                className="w-5 h-5 rounded-full border border-slate-300 shadow-2xs"
+                                style={{ backgroundColor: clr.hex }}
                               />
-                              <input
-                                type="text"
-                                value={clr.hex}
-                                onChange={(e) => {
-                                  const updated = [...formData.colors];
-                                  updated[cIdx] = { ...updated[cIdx], hex: e.target.value };
-                                  setFormData({ ...formData, colors: updated });
-                                }}
-                                placeholder="#1c2536"
-                                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono"
-                              />
+                              <span className="text-xs font-bold text-slate-900">Color Swatch #{cIdx + 1}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = formData.colors.filter((_, i) => i !== cIdx);
+                                setFormData({ ...formData, colors: updated });
+                              }}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded"
+                              title="Remove Color Variant"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <Input
+                              label="Color Name"
+                              value={clr.name}
+                              onChange={(e) => {
+                                const updated = [...formData.colors];
+                                updated[cIdx] = { ...updated[cIdx], name: e.target.value };
+                                setFormData({ ...formData, colors: updated });
+                              }}
+                              placeholder="e.g. Royal Navy"
+                            />
+                            <div>
+                              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                Hex Code
+                              </label>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="color"
+                                  value={clr.hex.startsWith('#') ? clr.hex : '#1c2536'}
+                                  onChange={(e) => {
+                                    const updated = [...formData.colors];
+                                    updated[cIdx] = { ...updated[cIdx], hex: e.target.value };
+                                    setFormData({ ...formData, colors: updated });
+                                  }}
+                                  className="w-9 h-9 p-0.5 rounded-xl border border-slate-200 cursor-pointer bg-white"
+                                />
+                                <input
+                                  type="text"
+                                  value={clr.hex}
+                                  onChange={(e) => {
+                                    const updated = [...formData.colors];
+                                    updated[cIdx] = { ...updated[cIdx], hex: e.target.value };
+                                    setFormData({ ...formData, colors: updated });
+                                  }}
+                                  placeholder="#1c2536"
+                                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono"
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        <Input
-                          label="Color Specific Garment Image URL (Optional)"
-                          value={clr.image || ''}
-                          onChange={(e) => {
-                            const updated = [...formData.colors];
-                            updated[cIdx] = { ...updated[cIdx], image: e.target.value };
-                            setFormData({ ...formData, colors: updated });
-                          }}
-                          placeholder="https://images.unsplash.com/photo-..."
-                        />
-                      </div>
-                    ))}
+                          {/* Color-Specific Photo Gallery for this Color Variant */}
+                          <div className="space-y-2 pt-2 border-t border-slate-200/80">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                Photos for "{clr.name || `Color ${cIdx + 1}`}" ({colorImages.length})
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...formData.colors];
+                                  const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
+                                    ? updated[cIdx].images
+                                    : (updated[cIdx].image ? [updated[cIdx].image] : []);
+                                  updated[cIdx] = {
+                                    ...updated[cIdx],
+                                    images: [...currentImgs, ''],
+                                  };
+                                  setFormData({ ...formData, colors: updated });
+                                }}
+                                className="text-[10px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" /> Add Photo URL
+                              </button>
+                            </div>
+
+                            {/* List of Photo URL Inputs */}
+                            {colorImages.length === 0 ? (
+                              <p className="text-[11px] text-slate-400 italic">No photos added for this color yet.</p>
+                            ) : (
+                              <div className="space-y-2">
+                                {colorImages.map((imgUrl, imgIdx) => (
+                                  <div key={imgIdx} className="flex items-center gap-2">
+                                    {imgUrl ? (
+                                      <img
+                                        src={imgUrl}
+                                        alt="Color thumbnail"
+                                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
+                                        onError={(e) => {
+                                          (e.target as HTMLElement).style.display = 'none';
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-9 h-9 rounded-lg bg-slate-200 flex items-center justify-center text-[10px] text-slate-500 shrink-0 font-mono">
+                                        #{imgIdx + 1}
+                                      </div>
+                                    )}
+                                    <input
+                                      type="text"
+                                      value={imgUrl}
+                                      onChange={(e) => {
+                                        const updated = [...formData.colors];
+                                        const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
+                                          ? [...updated[cIdx].images]
+                                          : (updated[cIdx].image ? [updated[cIdx].image] : []);
+                                        currentImgs[imgIdx] = e.target.value;
+                                        updated[cIdx] = {
+                                          ...updated[cIdx],
+                                          image: currentImgs[0] || '',
+                                          images: currentImgs,
+                                        };
+                                        setFormData({ ...formData, colors: updated });
+                                      }}
+                                      placeholder="https://images.unsplash.com/photo-..."
+                                      className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const updated = [...formData.colors];
+                                        const currentImgs = (updated[cIdx].images || []).filter((_: string, i: number) => i !== imgIdx);
+                                        updated[cIdx] = {
+                                          ...updated[cIdx],
+                                          image: currentImgs[0] || '',
+                                          images: currentImgs,
+                                        };
+                                        setFormData({ ...formData, colors: updated });
+                                      }}
+                                      className="p-1 text-slate-400 hover:text-red-600 rounded"
+                                      title="Delete Photo"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

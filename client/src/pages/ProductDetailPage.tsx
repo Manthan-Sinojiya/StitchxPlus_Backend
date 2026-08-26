@@ -281,14 +281,18 @@ export function ProductDetailPage() {
     green: '#166534',
   };
 
-  const colorList: Array<{ name: string; hex: string; image?: string }> =
+  const colorList: Array<{ name: string; hex: string; image?: string; images?: string[] }> =
     product?.colors && product.colors.length > 0
       ? product.colors.map((c: any, i: number) => {
           if (typeof c === 'object' && c !== null) {
+            const rawImgs = Array.isArray(c.images)
+              ? c.images.filter((u: any) => typeof u === 'string' && u.trim())
+              : [];
             return {
               name: c.name || `Color ${i + 1}`,
               hex: c.hex || COLOR_HEX_MAP[c.name?.toLowerCase()] || '#2b2d31',
-              image: c.image,
+              image: c.image || rawImgs[0] || '',
+              images: rawImgs.length > 0 ? rawImgs : (c.image ? [c.image] : []),
             };
           }
           if (typeof c === 'string') {
@@ -296,13 +300,31 @@ export function ProductDetailPage() {
             return {
               name: isHex ? `Color ${i + 1}` : c,
               hex: isHex ? c : COLOR_HEX_MAP[c.toLowerCase()] || '#2b2d31',
+              image: '',
+              images: [],
             };
           }
-          return { name: `Color ${i + 1}`, hex: '#2b2d31' };
+          return { name: `Color ${i + 1}`, hex: '#2b2d31', image: '', images: [] };
         })
       : [];
 
   const activeColorSwatch = colorList[selectedColorIndex];
+
+  // Extract all photos associated with the chosen color variant
+  const selectedColorPhotos: string[] =
+    activeColorSwatch?.images && activeColorSwatch.images.length > 0
+      ? activeColorSwatch.images
+      : activeColorSwatch?.image
+        ? [activeColorSwatch.image]
+        : [];
+
+  // When a color with specific photos is chosen, display ALL photos of that color in the gallery!
+  const galleryImages =
+    selectedColorPhotos.length > 0
+      ? selectedColorPhotos
+      : product?.images && product.images.length > 0
+        ? product.images
+        : [];
 
   const normalizedImages: string[] = (product.images || []).map((img) =>
     typeof img === 'string' ? img : img.url,
@@ -508,11 +530,7 @@ export function ProductDetailPage() {
           */}
           {/* STANDARD GALLERY MODE */}
           <ProductImageGallery
-            images={
-              activeColorSwatch?.image
-                ? [activeColorSwatch.image, ...(product.images || [])]
-                : product.images
-            }
+            images={galleryImages}
             productName={product.name}
           />
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, Expand, ZoomIn } from 'lucide-react';
 
@@ -22,6 +22,12 @@ export function ProductImageGallery({ images = [], productName }: ProductImageGa
   const displayImages = normalized.length > 0 ? normalized : [{ url: FALLBACK, alt: productName }];
 
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    if (selectedIndex >= displayImages.length) {
+      setSelectedIndex(0);
+    }
+  }, [displayImages.length, selectedIndex]);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [imgError, setImgError] = useState<Record<number, boolean>>({});
