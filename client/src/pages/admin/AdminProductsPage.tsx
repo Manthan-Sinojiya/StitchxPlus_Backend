@@ -14,6 +14,8 @@ import {
   Save,
   Shirt,
   Layers,
+  Upload,
+  Check,
 } from 'lucide-react';
 import { Button, Input, Select, ImageUploader, useToast, Loader, Pagination } from '../../components/ui';
 import { adminService } from '../../services/adminService';
@@ -590,7 +592,7 @@ export function AdminProductsPage() {
                         Color Swatches & Color-Specific Garment Imagery
                       </h4>
                       <p className="text-[11px] text-slate-500">
-                        Add color swatches and attach specific photos for each color. Selecting a color swatch on the storefront displays all photos for that chosen color!
+                        Add color swatches and attach photos. You can select from main product images, upload new image files, or paste direct URLs!
                       </p>
                     </div>
                     <Button
@@ -615,8 +617,87 @@ export function AdminProductsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {formData.colors.map((clr, cIdx) => {
                       const colorImages = clr.images && clr.images.length > 0 ? clr.images : (clr.image ? [clr.image] : []);
+                      const availableProductPhotos = formData.images
+                        .map((img) => img.url)
+                        .filter((url) => Boolean(url && url.trim()));
+
+                      const handleFileUploadForColor = async (e: React.ChangeEvent<HTMLInputElement>, targetImgIdx?: number) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        let uploadedUrl = '';
+                        try {
+                          const sig = await adminService.getCloudinarySignature('stitchx_uploads');
+                          if (sig?.signature && sig?.cloudName && sig?.apiKey) {
+                            const data = new FormData();
+                            data.append('file', file);
+                            data.append('api_key', sig.apiKey);
+                            data.append('timestamp', String(sig.timestamp));
+                            data.append('signature', sig.signature);
+                            data.append('folder', sig.folder || 'stitchx_uploads');
+
+                            const res = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`, {
+                              method: 'POST',
+                              body: data,
+                            });
+                            if (res.ok) {
+                              const json = await res.json();
+                              if (json.secure_url) uploadedUrl = json.secure_url;
+                            }
+                          }
+                        } catch (_err) {}
+
+                        if (!uploadedUrl) {
+                          uploadedUrl = await new Promise<string>((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve((reader.result as string) || '');
+                            reader.readAsDataURL(file);
+                          });
+                        }
+
+                        if (!uploadedUrl) return;
+
+                        const updated = [...formData.colors];
+                        const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
+                          ? [...updated[cIdx].images]
+                          : (updated[cIdx].image ? [updated[cIdx].image] : []);
+
+                        if (typeof targetImgIdx === 'number') {
+                          currentImgs[targetImgIdx] = uploadedUrl;
+                        } else {
+                          currentImgs.push(uploadedUrl);
+                        }
+
+                        updated[cIdx] = {
+                          ...updated[cIdx],
+                          image: currentImgs[0] || '',
+                          images: currentImgs,
+                        };
+                        setFormData({ ...formData, colors: updated });
+                        e.target.value = '';
+                      };
+
+                      const toggleProductPhoto = (photoUrl: string) => {
+                        const updated = [...formData.colors];
+                        const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
+                          ? [...updated[cIdx].images]
+                          : (updated[cIdx].image ? [updated[cIdx].image] : []);
+
+                        const exists = currentImgs.includes(photoUrl);
+                        const nextImgs = exists
+                          ? currentImgs.filter((u) => u !== photoUrl)
+                          : [...currentImgs, photoUrl];
+
+                        updated[cIdx] = {
+                          ...updated[cIdx],
+                          image: nextImgs[0] || '',
+                          images: nextImgs,
+                        };
+                        setFormData({ ...formData, colors: updated });
+                      };
+
                       return (
-                        <div key={cIdx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                        <div key={cIdx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span
@@ -679,52 +760,110 @@ export function AdminProductsPage() {
                             </div>
                           </div>
 
-                          {/* Color-Specific Photo Gallery for this Color Variant */}
-                          <div className="space-y-2 pt-2 border-t border-slate-200/80">
-                            <div className="flex items-center justify-between">
+                          {/* QUICK PICK FROM MAIN PRODUCT IMAGES */}
+                          {availableProductPhotos.length > 0 && (
+                            <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                                  <ImageIcon className="w-3.5 h-3.5 text-amber-600" /> Select From Main Product Images
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-medium">Click thumbnail to attach</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                {availableProductPhotos.map((photoUrl, pIdx) => {
+                                  const isSelected = colorImages.includes(photoUrl);
+                                  return (
+                                    <button
+                                      key={pIdx}
+                                      type="button"
+                                      onClick={() => toggleProductPhoto(photoUrl)}
+                                      className={`relative w-12 h-12 rounded-lg overflow-hidden border-2 transition-all group ${
+                                        isSelected
+                                          ? 'border-amber-500 ring-2 ring-amber-500/20 scale-105'
+                                          : 'border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100'
+                                      }`}
+                                      title={isSelected ? 'Selected (click to remove)' : 'Click to add to this color'}
+                                    >
+                                      <img src={photoUrl} alt={`Product ${pIdx + 1}`} className="w-full h-full object-cover" />
+                                      {isSelected && (
+                                        <div className="absolute inset-0 bg-amber-500/30 flex items-center justify-center">
+                                          <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-xs">
+                                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                          </div>
+                                        </div>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* COLOR PHOTOS MANAGEMENT: UPLOAD & URL BOTH */}
+                          <div className="space-y-3 pt-2 border-t border-slate-200/80">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
                               <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                                 Photos for "{clr.name || `Color ${cIdx + 1}`}" ({colorImages.length})
                               </label>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = [...formData.colors];
-                                  const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
-                                    ? updated[cIdx].images
-                                    : (updated[cIdx].image ? [updated[cIdx].image] : []);
-                                  updated[cIdx] = {
-                                    ...updated[cIdx],
-                                    images: [...currentImgs, ''],
-                                  };
-                                  setFormData({ ...formData, colors: updated });
-                                }}
-                                className="text-[10px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
-                              >
-                                <Plus className="w-3 h-3" /> Add Photo URL
-                              </button>
+
+                              <div className="flex items-center gap-2">
+                                {/* Direct File Upload Button */}
+                                <label className="text-[10px] font-bold text-slate-950 bg-amber-400 hover:bg-amber-500 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-2xs">
+                                  <Upload className="w-3 h-3" />
+                                  <span>Upload Image File</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleFileUploadForColor(e)}
+                                    className="hidden"
+                                  />
+                                </label>
+
+                                {/* Direct URL Add Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...formData.colors];
+                                    const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
+                                      ? updated[cIdx].images
+                                      : (updated[cIdx].image ? [updated[cIdx].image] : []);
+                                    updated[cIdx] = {
+                                      ...updated[cIdx],
+                                      images: [...currentImgs, ''],
+                                    };
+                                    setFormData({ ...formData, colors: updated });
+                                  }}
+                                  className="text-[10px] font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1"
+                                >
+                                  <Plus className="w-3 h-3" /> Add Image URL
+                                </button>
+                              </div>
                             </div>
 
-                            {/* List of Photo URL Inputs */}
+                            {/* List of Photo Inputs with URL + Upload File button on each item */}
                             {colorImages.length === 0 ? (
-                              <p className="text-[11px] text-slate-400 italic">No photos added for this color yet.</p>
+                              <p className="text-[11px] text-slate-400 italic bg-white p-3 rounded-xl border border-dashed border-slate-200 text-center">
+                                No photos added for this color yet. Use "Select From Main Product Images", "Upload Image File", or "Add Image URL" above!
+                              </p>
                             ) : (
                               <div className="space-y-2">
                                 {colorImages.map((imgUrl, imgIdx) => (
-                                  <div key={imgIdx} className="flex items-center gap-2">
+                                  <div key={imgIdx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
                                     {imgUrl ? (
                                       <img
                                         src={imgUrl}
                                         alt="Color thumbnail"
-                                        className="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0"
+                                        className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
                                         onError={(e) => {
                                           (e.target as HTMLElement).style.display = 'none';
                                         }}
                                       />
                                     ) : (
-                                      <div className="w-9 h-9 rounded-lg bg-slate-200 flex items-center justify-center text-[10px] text-slate-500 shrink-0 font-mono">
+                                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400 shrink-0 font-mono">
                                         #{imgIdx + 1}
                                       </div>
                                     )}
+
                                     <input
                                       type="text"
                                       value={imgUrl}
@@ -741,9 +880,25 @@ export function AdminProductsPage() {
                                         };
                                         setFormData({ ...formData, colors: updated });
                                       }}
-                                      placeholder="https://images.unsplash.com/photo-..."
-                                      className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800"
+                                      placeholder="https://images.unsplash.com/photo-... or upload file"
+                                      className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:bg-white focus:outline-none"
                                     />
+
+                                    {/* Inline File Upload Icon Button */}
+                                    <label
+                                      className="p-2 text-slate-500 hover:text-amber-700 bg-slate-100 hover:bg-amber-50 rounded-lg cursor-pointer transition-colors"
+                                      title="Upload image file for this slot"
+                                    >
+                                      <Upload className="w-3.5 h-3.5" />
+                                      <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleFileUploadForColor(e, imgIdx)}
+                                        className="hidden"
+                                      />
+                                    </label>
+
+                                    {/* Delete Button */}
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -756,7 +911,7 @@ export function AdminProductsPage() {
                                         };
                                         setFormData({ ...formData, colors: updated });
                                       }}
-                                      className="p-1 text-slate-400 hover:text-red-600 rounded"
+                                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                       title="Delete Photo"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />

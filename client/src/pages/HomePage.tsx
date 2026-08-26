@@ -185,7 +185,7 @@ export function HomePage() {
       />
 
       {/* FULL BLEED IMMERSIVE HERO SECTION (Touches header navbar) */}
-      <section className="relative w-full overflow-hidden bg-slate-950 text-white min-h-[400px] sm:min-h-[460px] lg:min-h-[500px] max-h-[560px] flex flex-col justify-between">
+      <section className="relative w-full overflow-hidden bg-slate-950 text-white min-h-[420px] sm:min-h-[480px] lg:min-h-[520px] max-h-[580px] flex flex-col justify-between">
         {/* Full Viewport Background Image */}
         <div className="absolute inset-0 z-0">
           <img
