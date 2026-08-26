@@ -15,7 +15,6 @@ import {
   Shirt,
   Layers,
   Upload,
-  Check,
 } from 'lucide-react';
 import { Button, Input, Select, ImageUploader, useToast, Loader, Pagination } from '../../components/ui';
 import { adminService } from '../../services/adminService';
@@ -65,7 +64,7 @@ export function AdminProductsPage() {
     isFeatured: false,
     isNew: true,
     isOnSale: false,
-    colors: [] as Array<{ name: string; hex: string; image?: string; images?: string[] }>,
+    colors: [] as Array<{ name: string; hex: string; image?: string; images?: Array<string | { url: string; altText?: string }> }>,
     images: [] as { url: string; altText?: string; isPrimary?: boolean }[],
     seo: {
       metaTitle: '',
@@ -592,7 +591,7 @@ export function AdminProductsPage() {
                         Color Swatches & Color-Specific Garment Imagery
                       </h4>
                       <p className="text-[11px] text-slate-500">
-                        Add color swatches and attach photos. You can select from main product images, upload new image files, or paste direct URLs!
+                        Add color swatches and attach specific photos. Upload image files or paste direct URLs, with SEO alt tags for each photo!
                       </p>
                     </div>
                     <Button
@@ -617,9 +616,6 @@ export function AdminProductsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {formData.colors.map((clr, cIdx) => {
                       const colorImages = clr.images && clr.images.length > 0 ? clr.images : (clr.image ? [clr.image] : []);
-                      const availableProductPhotos = formData.images
-                        .map((img) => img.url)
-                        .filter((url) => Boolean(url && url.trim()));
 
                       const handleFileUploadForColor = async (e: React.ChangeEvent<HTMLInputElement>, targetImgIdx?: number) => {
                         const file = e.target.files?.[0];
@@ -657,43 +653,29 @@ export function AdminProductsPage() {
 
                         if (!uploadedUrl) return;
 
+                        const defaultAlt = `${clr.name || 'Garment'} Suit View`;
                         const updated = [...formData.colors];
                         const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
                           ? [...updated[cIdx].images]
                           : (updated[cIdx].image ? [updated[cIdx].image] : []);
 
                         if (typeof targetImgIdx === 'number') {
-                          currentImgs[targetImgIdx] = uploadedUrl;
+                          const existing = currentImgs[targetImgIdx];
+                          const prevAlt = typeof existing === 'string' ? defaultAlt : existing?.altText || defaultAlt;
+                          currentImgs[targetImgIdx] = { url: uploadedUrl, altText: prevAlt };
                         } else {
-                          currentImgs.push(uploadedUrl);
+                          currentImgs.push({ url: uploadedUrl, altText: defaultAlt });
                         }
+
+                        const firstUrl = typeof currentImgs[0] === 'string' ? currentImgs[0] : currentImgs[0]?.url || '';
 
                         updated[cIdx] = {
                           ...updated[cIdx],
-                          image: currentImgs[0] || '',
+                          image: firstUrl,
                           images: currentImgs,
                         };
                         setFormData({ ...formData, colors: updated });
                         e.target.value = '';
-                      };
-
-                      const toggleProductPhoto = (photoUrl: string) => {
-                        const updated = [...formData.colors];
-                        const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
-                          ? [...updated[cIdx].images]
-                          : (updated[cIdx].image ? [updated[cIdx].image] : []);
-
-                        const exists = currentImgs.includes(photoUrl);
-                        const nextImgs = exists
-                          ? currentImgs.filter((u) => u !== photoUrl)
-                          : [...currentImgs, photoUrl];
-
-                        updated[cIdx] = {
-                          ...updated[cIdx],
-                          image: nextImgs[0] || '',
-                          images: nextImgs,
-                        };
-                        setFormData({ ...formData, colors: updated });
                       };
 
                       return (
@@ -760,46 +742,7 @@ export function AdminProductsPage() {
                             </div>
                           </div>
 
-                          {/* QUICK PICK FROM MAIN PRODUCT IMAGES */}
-                          {availableProductPhotos.length > 0 && (
-                            <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                                  <ImageIcon className="w-3.5 h-3.5 text-amber-600" /> Select From Main Product Images
-                                </span>
-                                <span className="text-[10px] text-slate-400 font-medium">Click thumbnail to attach</span>
-                              </div>
-                              <div className="flex flex-wrap gap-2 pt-1">
-                                {availableProductPhotos.map((photoUrl, pIdx) => {
-                                  const isSelected = colorImages.includes(photoUrl);
-                                  return (
-                                    <button
-                                      key={pIdx}
-                                      type="button"
-                                      onClick={() => toggleProductPhoto(photoUrl)}
-                                      className={`relative w-12 h-12 rounded-lg overflow-hidden border-2 transition-all group ${
-                                        isSelected
-                                          ? 'border-amber-500 ring-2 ring-amber-500/20 scale-105'
-                                          : 'border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100'
-                                      }`}
-                                      title={isSelected ? 'Selected (click to remove)' : 'Click to add to this color'}
-                                    >
-                                      <img src={photoUrl} alt={`Product ${pIdx + 1}`} className="w-full h-full object-cover" />
-                                      {isSelected && (
-                                        <div className="absolute inset-0 bg-amber-500/30 flex items-center justify-center">
-                                          <div className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-xs">
-                                            <Check className="w-3.5 h-3.5 stroke-[3]" />
-                                          </div>
-                                        </div>
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* COLOR PHOTOS MANAGEMENT: UPLOAD & URL BOTH */}
+                          {/* COLOR PHOTOS MANAGEMENT: UPLOAD & URL BOTH WITH SEO ALT TAG */}
                           <div className="space-y-3 pt-2 border-t border-slate-200/80">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
@@ -829,7 +772,7 @@ export function AdminProductsPage() {
                                       : (updated[cIdx].image ? [updated[cIdx].image] : []);
                                     updated[cIdx] = {
                                       ...updated[cIdx],
-                                      images: [...currentImgs, ''],
+                                      images: [...currentImgs, { url: '', altText: `${clr.name || 'Color'} Garment View` }],
                                     };
                                     setFormData({ ...formData, colors: updated });
                                   }}
@@ -840,84 +783,136 @@ export function AdminProductsPage() {
                               </div>
                             </div>
 
-                            {/* List of Photo Inputs with URL + Upload File button on each item */}
+                            {/* List of Photo Inputs with URL + Upload File button + SEO Alt Tag */}
                             {colorImages.length === 0 ? (
                               <p className="text-[11px] text-slate-400 italic bg-white p-3 rounded-xl border border-dashed border-slate-200 text-center">
-                                No photos added for this color yet. Use "Select From Main Product Images", "Upload Image File", or "Add Image URL" above!
+                                No photos added for this color yet. Click "Upload Image File" or "Add Image URL" above to add garment photos!
                               </p>
                             ) : (
-                              <div className="space-y-2">
-                                {colorImages.map((imgUrl, imgIdx) => (
-                                  <div key={imgIdx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
-                                    {imgUrl ? (
-                                      <img
-                                        src={imgUrl}
-                                        alt="Color thumbnail"
-                                        className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
-                                        onError={(e) => {
-                                          (e.target as HTMLElement).style.display = 'none';
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className="w-10 h-10 rounded-lg bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400 shrink-0 font-mono">
-                                        #{imgIdx + 1}
+                              <div className="space-y-3">
+                                {colorImages.map((imgItem, imgIdx) => {
+                                  const imgObj = typeof imgItem === 'string'
+                                    ? { url: imgItem, altText: '' }
+                                    : { url: imgItem?.url || '', altText: imgItem?.altText || '' };
+
+                                  const updatePhotoUrl = (newUrl: string) => {
+                                    const updated = [...formData.colors];
+                                    const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
+                                      ? [...updated[cIdx].images]
+                                      : (updated[cIdx].image ? [updated[cIdx].image] : []);
+                                    currentImgs[imgIdx] = { url: newUrl, altText: imgObj.altText };
+
+                                    const firstUrl = typeof currentImgs[0] === 'string' ? currentImgs[0] : currentImgs[0]?.url || '';
+
+                                    updated[cIdx] = {
+                                      ...updated[cIdx],
+                                      image: firstUrl,
+                                      images: currentImgs,
+                                    };
+                                    setFormData({ ...formData, colors: updated });
+                                  };
+
+                                  const updatePhotoAlt = (newAlt: string) => {
+                                    const updated = [...formData.colors];
+                                    const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
+                                      ? [...updated[cIdx].images]
+                                      : (updated[cIdx].image ? [updated[cIdx].image] : []);
+                                    currentImgs[imgIdx] = { url: imgObj.url, altText: newAlt };
+
+                                    const firstUrl = typeof currentImgs[0] === 'string' ? currentImgs[0] : currentImgs[0]?.url || '';
+
+                                    updated[cIdx] = {
+                                      ...updated[cIdx],
+                                      image: firstUrl,
+                                      images: currentImgs,
+                                    };
+                                    setFormData({ ...formData, colors: updated });
+                                  };
+
+                                  return (
+                                    <div key={imgIdx} className="p-3 bg-white rounded-xl border border-slate-200/90 shadow-2xs space-y-2.5">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                          Photo #{imgIdx + 1}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const updated = [...formData.colors];
+                                            const currentImgs = (updated[cIdx].images || []).filter((_: any, i: number) => i !== imgIdx);
+                                            const firstUrl = typeof currentImgs[0] === 'string' ? currentImgs[0] : currentImgs[0]?.url || '';
+                                            updated[cIdx] = {
+                                              ...updated[cIdx],
+                                              image: firstUrl,
+                                              images: currentImgs,
+                                            };
+                                            setFormData({ ...formData, colors: updated });
+                                          }}
+                                          className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors"
+                                          title="Delete Photo"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
                                       </div>
-                                    )}
 
-                                    <input
-                                      type="text"
-                                      value={imgUrl}
-                                      onChange={(e) => {
-                                        const updated = [...formData.colors];
-                                        const currentImgs = updated[cIdx].images && updated[cIdx].images.length > 0
-                                          ? [...updated[cIdx].images]
-                                          : (updated[cIdx].image ? [updated[cIdx].image] : []);
-                                        currentImgs[imgIdx] = e.target.value;
-                                        updated[cIdx] = {
-                                          ...updated[cIdx],
-                                          image: currentImgs[0] || '',
-                                          images: currentImgs,
-                                        };
-                                        setFormData({ ...formData, colors: updated });
-                                      }}
-                                      placeholder="https://images.unsplash.com/photo-... or upload file"
-                                      className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:bg-white focus:outline-none"
-                                    />
+                                      {/* Image URL + Inline Upload File Button */}
+                                      <div className="flex items-center gap-2">
+                                        {imgObj.url ? (
+                                          <img
+                                            src={imgObj.url}
+                                            alt={imgObj.altText || 'Color thumbnail'}
+                                            className="w-10 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
+                                            onError={(e) => {
+                                              (e.target as HTMLElement).style.display = 'none';
+                                            }}
+                                          />
+                                        ) : (
+                                          <div className="w-10 h-10 rounded-lg bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400 shrink-0 font-mono">
+                                            #{imgIdx + 1}
+                                          </div>
+                                        )}
 
-                                    {/* Inline File Upload Icon Button */}
-                                    <label
-                                      className="p-2 text-slate-500 hover:text-amber-700 bg-slate-100 hover:bg-amber-50 rounded-lg cursor-pointer transition-colors"
-                                      title="Upload image file for this slot"
-                                    >
-                                      <Upload className="w-3.5 h-3.5" />
-                                      <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => handleFileUploadForColor(e, imgIdx)}
-                                        className="hidden"
-                                      />
-                                    </label>
+                                        <input
+                                          type="text"
+                                          value={imgObj.url}
+                                          onChange={(e) => updatePhotoUrl(e.target.value)}
+                                          placeholder="https://images.unsplash.com/... or upload file"
+                                          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-800 font-mono focus:bg-white focus:outline-none"
+                                        />
 
-                                    {/* Delete Button */}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const updated = [...formData.colors];
-                                        const currentImgs = (updated[cIdx].images || []).filter((_: string, i: number) => i !== imgIdx);
-                                        updated[cIdx] = {
-                                          ...updated[cIdx],
-                                          image: currentImgs[0] || '',
-                                          images: currentImgs,
-                                        };
-                                        setFormData({ ...formData, colors: updated });
-                                      }}
-                                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                      title="Delete Photo"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                ))}
+                                        <label
+                                          className="px-2.5 py-1.5 text-[11px] font-bold text-slate-950 bg-amber-400 hover:bg-amber-500 rounded-lg cursor-pointer transition-colors flex items-center gap-1 shrink-0 shadow-2xs"
+                                          title="Upload image file for this photo slot"
+                                        >
+                                          <Upload className="w-3.5 h-3.5" />
+                                          <span>Upload</span>
+                                          <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleFileUploadForColor(e, imgIdx)}
+                                            className="hidden"
+                                          />
+                                        </label>
+                                      </div>
+
+                                      {/* SEO Alt Tag Input */}
+                                      <div className="space-y-1 pt-1.5 border-t border-slate-100">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                                            <Sparkles className="w-3 h-3 text-amber-500" /> SEO Image Alt Tag
+                                          </span>
+                                        </div>
+                                        <input
+                                          type="text"
+                                          value={imgObj.altText}
+                                          onChange={(e) => updatePhotoAlt(e.target.value)}
+                                          placeholder={`e.g. ${clr.name || 'Garment'} Italian Wool Suit Front View`}
+                                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none"
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>

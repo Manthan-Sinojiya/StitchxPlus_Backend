@@ -83,7 +83,7 @@ export interface ColorVariant {
   name: string;
   hex: string;
   image?: string;
-  images?: string[];
+  images?: Array<string | { url: string; altText?: string }>;
 }
 
 export interface SimpleVariant {
