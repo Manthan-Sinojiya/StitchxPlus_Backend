@@ -225,9 +225,7 @@ export function PatternManager() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm(`Are you sure you want to delete "${p.name}"?`)) {
-                      deleteMutation.mutate(p.id);
-                    }
+                    deleteMutation.mutate(p.id);
                   }}
                   className="text-red-400 hover:text-red-600 p-2 rounded-xl hover:bg-red-50 transition-colors"
                   title="Delete Pattern"

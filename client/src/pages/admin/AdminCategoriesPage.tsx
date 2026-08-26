@@ -131,7 +131,6 @@ export function AdminCategoriesPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
     try {
       await adminService.deleteCategory(id);
       window.dispatchEvent(new CustomEvent('cms-nav-updated'));

@@ -105,7 +105,6 @@ export function AdminCouponsPage() {
   };
 
   const handleDelete = async (id: string, code: string) => {
-    if (!confirm(`Are you sure you want to delete coupon code "${code}"?`)) return;
     try {
       await adminService.deleteCoupon(id);
       toast('info', 'Coupon Deleted', `${code} deleted.`);

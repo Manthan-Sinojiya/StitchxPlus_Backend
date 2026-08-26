@@ -225,11 +225,10 @@ export function AdminContentPage() {
   };
 
   const handleDeletePage = async (id: string, title: string) => {
-    if (!window.confirm(`Are you sure you want to delete the page "${title}"?`)) return;
     try {
       await contentService.deletePage(id);
       window.dispatchEvent(new CustomEvent('cms-nav-updated'));
-      toast('success', 'Page Deleted', `Page "${title}" deleted.`);
+      toast('info', 'Page Deleted', `Page "${title}" deleted.`);
       setPages(pages.filter((p) => p._id !== id));
     } catch (err: any) {
       toast('error', 'Error', err.message || 'Failed to delete page');

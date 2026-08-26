@@ -117,7 +117,6 @@ export function AdminFabricsPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete fabric "${name}"?`)) return;
     try {
       await adminService.deleteFabric(id);
       toast('info', 'Fabric Deleted', `"${name}" removed.`);

@@ -123,7 +123,6 @@ export function AdminCustomizationPage() {
   };
 
   const handleDelete = async (id: string, groupName: string) => {
-    if (!confirm(`Are you sure you want to delete customization group "${groupName}"?`)) return;
     try {
       await adminService.deleteCustomizationGroup(id);
       toast('info', 'Group Deleted', `${groupName} removed.`);

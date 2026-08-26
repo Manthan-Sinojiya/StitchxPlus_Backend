@@ -318,10 +318,9 @@ export function AdminProductsPage() {
   };
 
   const handleDeleteProduct = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}" from catalog?`)) return;
     try {
       await adminService.deleteProduct(id);
-      toast('info', 'Garment Removed', `${name} deleted.`);
+      toast('info', 'Garment Removed', `${name} deleted from catalog.`);
       fetchData();
     } catch (err: any) {
       toast('error', 'Error', err?.message || 'Failed to delete product.');
@@ -1219,7 +1218,6 @@ export function AdminProductsPage() {
                               <button
                                 type="button"
                                 onClick={async () => {
-                                  if (!confirm(`Delete custom section "${sec.name}"?`)) return;
                                   const updated = customSections.filter((s) => s.id !== sec.id);
                                   setCustomSections(updated);
                                   await contentService.saveCustomSections(updated);
@@ -1383,6 +1381,89 @@ export function AdminProductsPage() {
             </div>
           </div>
         </form>
+
+        {/* Modal for Creating / Editing Dynamic Showcase Sections */}
+        {showSectionModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-amber-600" />
+                  {editingSection ? 'Edit Showcase Section' : 'Create New Showcase Section'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowSectionModal(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveSection} className="space-y-4">
+                <Input
+                  label="Section Title (e.g. Diwali Sale) *"
+                  value={sectionForm.name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    const code = name.toLowerCase().replace(/[^a-z0-9_]+/g, '_');
+                    setSectionForm({
+                      ...sectionForm,
+                      name,
+                      code: editingSection ? sectionForm.code : code,
+                      badgeText: editingSection ? sectionForm.badgeText : name,
+                    });
+                  }}
+                  placeholder="e.g. Diwali Sale"
+                  required
+                />
+
+                <Input
+                  label="System Identifier / Tag Code *"
+                  value={sectionForm.code}
+                  onChange={(e) =>
+                    setSectionForm({
+                      ...sectionForm,
+                      code: e.target.value.toLowerCase().replace(/[^a-z0-9_]+/g, '_'),
+                    })
+                  }
+                  placeholder="e.g. diwali_sale"
+                  required
+                />
+
+                <Input
+                  label="Product Card Badge Text *"
+                  value={sectionForm.badgeText}
+                  onChange={(e) => setSectionForm({ ...sectionForm, badgeText: e.target.value })}
+                  placeholder="e.g. Diwali Special"
+                  required
+                />
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Section Description
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={sectionForm.description}
+                    onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })}
+                    placeholder="e.g. Festive promotional deals and exclusive bespoke tailoring"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowSectionModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" variant="gold" size="sm" leftIcon={<Save className="w-4 h-4" />}>
+                    {editingSection ? 'Update Section' : 'Create Section'}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
