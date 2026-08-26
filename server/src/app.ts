@@ -18,6 +18,7 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   env.CLIENT_ORIGIN,
   'http://localhost:5173',
+  'https://stitchx-plus-frontend.onrender.com',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -95,8 +96,9 @@ import { SEOController } from './controllers/seo.controller.js';
 app.get('/robots.txt', SEOController.getRobotsTxt);
 app.get('/sitemap.xml', SEOController.getSitemapXml);
 
-// API Routes
+// API Routes (mount at /api and root / for maximum URL structure compatibility)
 app.use('/api', routes);
+app.use('/', routes);
 
 // Centralized Error Handling Middleware
 app.use(errorHandler);
