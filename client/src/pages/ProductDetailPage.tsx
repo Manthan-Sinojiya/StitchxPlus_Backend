@@ -35,6 +35,7 @@ export function ProductDetailPage() {
   const { toast } = useToast();
 
   const [selectedSize, setSelectedSize] = useState('custom');
+  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [notifyEmail, setNotifyEmail] = useState('');
   const [isNotified, setIsNotified] = useState(false);
 
@@ -264,6 +265,45 @@ export function ProductDetailPage() {
 
   const primaryFabric = fabrics.length > 0 ? fabrics[0] : null;
 
+  const COLOR_HEX_MAP: Record<string, string> = {
+    black: '#121212',
+    charcoal: '#2b2d31',
+    navy: '#1b263b',
+    blue: '#2563eb',
+    tan: '#a8947d',
+    brown: '#5c4033',
+    grey: '#6b7280',
+    gray: '#6b7280',
+    beige: '#d1c7b7',
+    white: '#ffffff',
+    burgundy: '#800020',
+    olive: '#556b2f',
+    green: '#166534',
+  };
+
+  const colorList: Array<{ name: string; hex: string; image?: string }> =
+    product?.colors && product.colors.length > 0
+      ? product.colors.map((c: any, i: number) => {
+          if (typeof c === 'object' && c !== null) {
+            return {
+              name: c.name || `Color ${i + 1}`,
+              hex: c.hex || COLOR_HEX_MAP[c.name?.toLowerCase()] || '#2b2d31',
+              image: c.image,
+            };
+          }
+          if (typeof c === 'string') {
+            const isHex = c.startsWith('#');
+            return {
+              name: isHex ? `Color ${i + 1}` : c,
+              hex: isHex ? c : COLOR_HEX_MAP[c.toLowerCase()] || '#2b2d31',
+            };
+          }
+          return { name: `Color ${i + 1}`, hex: '#2b2d31' };
+        })
+      : [];
+
+  const activeColorSwatch = colorList[selectedColorIndex];
+
   const normalizedImages: string[] = (product.images || []).map((img) =>
     typeof img === 'string' ? img : img.url,
   );
@@ -467,7 +507,14 @@ export function ProductDetailPage() {
           ) :
           */}
           {/* STANDARD GALLERY MODE */}
-          <ProductImageGallery images={product.images} productName={product.name} />
+          <ProductImageGallery
+            images={
+              activeColorSwatch?.image
+                ? [activeColorSwatch.image, ...(product.images || [])]
+                : product.images
+            }
+            productName={product.name}
+          />
         </div>
 
         {/* Right Column: Garment Specs OR In-Page Step-by-Step Customization Panel */}
@@ -927,6 +974,38 @@ export function ProductDetailPage() {
 
               {/* Action Box: Size Selection & CTAs */}
               <div className="space-y-5 p-6 bg-white border border-charcoal-200/80 rounded-3xl shadow-card">
+                {/* Available Color Selector */}
+                {colorList.length > 0 && (
+                  <div className="space-y-2.5 pb-2 border-b border-charcoal-100">
+                    <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-charcoal-700">
+                      <span>Available Colors</span>
+                      <span className="text-bronze-700 font-bold capitalize font-serif text-sm">
+                        {activeColorSwatch?.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center flex-wrap gap-2.5">
+                      {colorList.map((col, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setSelectedColorIndex(idx)}
+                          className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border-2 transition-all cursor-pointer ${
+                            selectedColorIndex === idx
+                              ? 'border-navy-950 bg-navy-950 text-white shadow-md scale-[1.02]'
+                              : 'border-charcoal-200 hover:border-charcoal-400 bg-cream-50/50 text-charcoal-900'
+                          }`}
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full border border-black/20 shadow-xs flex-shrink-0"
+                            style={{ backgroundColor: col.hex }}
+                          />
+                          <span className="text-xs font-bold capitalize">{col.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {product.inStock ? (
                   <>
                     <div className="space-y-2">

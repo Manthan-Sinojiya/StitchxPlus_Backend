@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Sparkles, Eye, ShoppingBag, Star, Heart, Plus, Minus } from 'lucide-react';
+import { Sparkles, Eye, ShoppingBag, Star, Heart, Plus, Minus, Camera } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
 import { useToast } from '../ui';
 
@@ -33,6 +33,45 @@ export interface ProductCardProps {
   className?: string;
 }
 
+const COLOR_HEX_MAP: Record<string, string> = {
+  black: '#121212',
+  charcoal: '#2b2d31',
+  navy: '#1b263b',
+  blue: '#2563eb',
+  tan: '#a8947d',
+  brown: '#5c4033',
+  grey: '#6b7280',
+  gray: '#6b7280',
+  beige: '#d1c7b7',
+  white: '#ffffff',
+  burgundy: '#800020',
+  olive: '#556b2f',
+  green: '#166534',
+};
+
+function parseColors(colors?: any[]): Array<{ name: string; hex: string; image?: string }> {
+  if (!colors || !Array.isArray(colors) || colors.length === 0) {
+    return [];
+  }
+
+  return colors.map((c, i) => {
+    if (typeof c === 'object' && c !== null) {
+      return {
+        name: c.name || `Color ${i + 1}`,
+        hex: c.hex || COLOR_HEX_MAP[c.name?.toLowerCase()] || '#2b2d31',
+        image: c.image,
+      };
+    }
+    if (typeof c === 'string') {
+      const isHex = c.startsWith('#');
+      const name = isHex ? `Color ${i + 1}` : c;
+      const hex = isHex ? c : COLOR_HEX_MAP[c.toLowerCase()] || '#2b2d31';
+      return { name, hex };
+    }
+    return { name: `Color ${i + 1}`, hex: '#2b2d31' };
+  });
+}
+
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   onWishlistToggle,
@@ -46,6 +85,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const removeItem = useCartStore((state) => state.removeItem);
 
   const [addingToCart, setAddingToCart] = useState(false);
+  const [activeColorIndex, setActiveColorIndex] = useState(0);
+  const [imgError, setImgError] = useState(false);
 
   const productId = String(product._id || product.id || '');
   const productSlug = product.slug || productId;
@@ -64,12 +105,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const cartQuantity = cartItem?.quantity || 0;
   const cartItemId = (cartItem as any)?._id?.toString() || (cartItem as any)?.id?.toString();
 
-  // Extract primary image and hover (secondary) image
+  // Extract primary image and secondary hover image
   const rawImages = product.images || [];
   const primaryImgObj = rawImages.find((img) => typeof img === 'object' && img.isPrimary) || rawImages[0];
   const primaryUrl = typeof primaryImgObj === 'string'
     ? primaryImgObj
-    : primaryImgObj?.url || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80';
+    : primaryImgObj?.url || '';
 
   const secondaryImgObj = rawImages.length > 1 ? rawImages[1] : null;
   const secondaryUrl = secondaryImgObj
@@ -77,6 +118,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       ? secondaryImgObj
       : secondaryImgObj?.url
     : null;
+
+  // Colors array parsing (returns [] if product has no colors)
+  const colorList = parseColors(product.colors);
+  const activeSwatch = colorList[activeColorIndex];
+
+  // Specific image for selected color swatch
+  const colorSpecificImage = activeSwatch?.image || (
+    rawImages[activeColorIndex]
+      ? (typeof rawImages[activeColorIndex] === 'string'
+          ? (rawImages[activeColorIndex] as string)
+          : (rawImages[activeColorIndex] as any)?.url)
+      : null
+  );
+
+  const displayedPrimaryUrl = colorSpecificImage || primaryUrl;
+  const isImageMissing = imgError || !displayedPrimaryUrl;
 
   // Price calculations
   const comparePrice = product.compareAtPrice || (product.basePrice * 1.25);
@@ -86,38 +143,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     : 15;
 
   const currencySymbol = product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : '$';
-
-  // Color swatches mapping
-  const colorList: Array<{ name: string; hex: string; image?: string }> = (
-    product.colors && product.colors.length > 0
-      ? product.colors
-      : [
-          { name: 'Charcoal', hex: '#2b2d31' },
-          { name: 'Navy', hex: '#1b263b' },
-          { name: 'Tan', hex: '#a8947d' },
-        ]
-  ).map((c, i) =>
-    typeof c === 'string'
-      ? {
-          name: c,
-          hex: c.startsWith('#')
-            ? c
-            : i === 0
-            ? '#2b2d31'
-            : i === 1
-            ? '#1b263b'
-            : i === 2
-            ? '#a8947d'
-            : '#4a5568',
-        }
-      : c,
-  );
-
-  const [activeColorIndex, setActiveColorIndex] = useState(0);
-  const activeSwatch = colorList[activeColorIndex];
-  const colorSpecificImage = activeSwatch?.image || (rawImages[activeColorIndex] ? (typeof rawImages[activeColorIndex] === 'string' ? (rawImages[activeColorIndex] as string) : (rawImages[activeColorIndex] as any)?.url) : null);
-  const displayedPrimaryUrl = colorSpecificImage || primaryUrl;
-
   const showSale = hasDiscount;
 
   // Quick Add To Cart Handler
@@ -188,21 +213,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Image Container */}
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#f7f7f7] flex items-center justify-center">
         <RouterLink to={targetUrl} className="block w-full h-full relative overflow-hidden">
-          {/* Primary Image */}
-          <img
-            src={displayedPrimaryUrl}
-            alt={product.name}
-            className={`w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105 ${
-              secondaryUrl && !colorSpecificImage ? 'group-hover:opacity-0' : ''
-            }`}
-          />
-          {/* Secondary Hover Image */}
-          {secondaryUrl && !colorSpecificImage && (
-            <img
-              src={secondaryUrl}
-              alt={`${product.name} alternate view`}
-              className="absolute inset-0 w-full h-full object-cover object-top opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-105"
-            />
+          {isImageMissing ? (
+            /* Image Coming Soon Placeholder Stage */
+            <div className="w-full h-full bg-[#181a20] flex flex-col items-center justify-center p-6 text-center text-white space-y-2 select-none">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400 border border-white/10 shadow-md">
+                <Camera className="w-6 h-6 animate-pulse" />
+              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                Image Coming Soon
+              </span>
+              {activeSwatch && (
+                <span className="text-[11px] text-neutral-400">
+                  Color: <strong className="text-white capitalize">{activeSwatch.name}</strong>
+                </span>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Primary Image */}
+              <img
+                src={displayedPrimaryUrl}
+                alt={product.name}
+                className={`w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105 ${
+                  secondaryUrl && !colorSpecificImage ? 'group-hover:opacity-0' : ''
+                }`}
+                onError={() => setImgError(true)}
+              />
+              {/* Secondary Hover Image */}
+              {secondaryUrl && !colorSpecificImage && (
+                <img
+                  src={secondaryUrl}
+                  alt={`${product.name} alternate view`}
+                  className="absolute inset-0 w-full h-full object-cover object-top opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-105"
+                />
+              )}
+            </>
           )}
         </RouterLink>
 
@@ -333,7 +378,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Price & Color Swatches Footer Row */}
-        <div className="flex items-center justify-between pt-1 border-t border-neutral-100 mt-1">
+        <div className="flex items-center justify-between pt-1 border-t border-neutral-100 mt-1 min-h-[28px]">
           {/* Price */}
           <div className="flex items-baseline gap-2">
             <span className="text-base font-bold text-navy-950">
@@ -346,37 +391,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
           </div>
 
-          {/* Color Swatches */}
-          <div className="flex items-center gap-1">
-            {colorList.slice(0, 3).map((color, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setActiveColorIndex(idx);
-                }}
-                onMouseEnter={() => setActiveColorIndex(idx)}
-                className={`w-3.5 h-3.5 rounded-full transition-all relative ${
-                  color.hex.toLowerCase() === '#ffffff' || color.hex.toLowerCase() === '#fff'
-                    ? 'border border-gray-300'
-                    : ''
-                } ${
-                  activeColorIndex === idx
-                    ? 'ring-2 ring-navy-950 ring-offset-1 scale-110 shadow-xs z-10'
-                    : 'hover:scale-105 opacity-80 hover:opacity-100'
-                }`}
-                style={{ backgroundColor: color.hex }}
-                title={color.name}
-              />
-            ))}
-            {colorList.length > 3 && (
-              <span className="text-[9px] text-neutral-400 font-medium">
-                +{colorList.length - 3}
-              </span>
-            )}
-          </div>
+          {/* Color Swatches (Renders ONLY if product has colors!) */}
+          {colorList.length > 0 && (
+            <div className="flex items-center gap-1">
+              {colorList.slice(0, 4).map((color, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveColorIndex(idx);
+                    setImgError(false);
+                  }}
+                  onMouseEnter={() => {
+                    setActiveColorIndex(idx);
+                    setImgError(false);
+                  }}
+                  className={`w-3.5 h-3.5 rounded-full transition-all relative cursor-pointer ${
+                    color.hex.toLowerCase() === '#ffffff' || color.hex.toLowerCase() === '#fff'
+                      ? 'border border-gray-300'
+                      : ''
+                  } ${
+                    activeColorIndex === idx
+                      ? 'ring-2 ring-navy-950 ring-offset-1 scale-110 shadow-xs z-10'
+                      : 'hover:scale-105 opacity-80 hover:opacity-100'
+                  }`}
+                  style={{ backgroundColor: color.hex }}
+                  title={color.name}
+                />
+              ))}
+              {colorList.length > 4 && (
+                <span className="text-[9px] text-neutral-400 font-medium">
+                  +{colorList.length - 4}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
