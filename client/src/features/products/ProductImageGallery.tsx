@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, Expand, ZoomIn } from 'lucide-react';
 
 interface ProductImageGalleryProps {
@@ -187,110 +188,99 @@ export function ProductImageGallery({ images = [], productName }: ProductImageGa
         </div>
       </div>
 
-      {/* ─── Luxury High-Resolution Lightbox Modal (Expand View) ─── */}
-      {isLightboxOpen && (
-        <div
-          data-testid="lightbox-modal"
-          className="fixed inset-0 z-[999999] bg-navy-950/95 backdrop-blur-2xl flex flex-col items-center justify-between p-4 sm:p-6 select-none animate-fadeIn"
-          onClick={closeLightbox}
-        >
-          {/* Top Header Controls Bar */}
+      {/* ─── Apple iPhone-Style Frosted Glass Lightbox Portal Modal ─── */}
+      {isLightboxOpen &&
+        createPortal(
           <div
-            className="w-full max-w-7xl flex items-center justify-between z-50 pt-2 px-2"
-            onClick={(e) => e.stopPropagation()}
+            data-testid="lightbox-modal"
+            className="fixed inset-0 z-[9999999] bg-black/75 backdrop-blur-3xl flex items-center justify-center select-none overflow-hidden animate-fadeIn"
+            onClick={closeLightbox}
           >
-            <div className="flex items-center gap-3">
-              <span className="bg-gold-500 text-navy-950 font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-                Bespoke Inspection View
-              </span>
-              <span className="text-slate-300 text-sm font-semibold hidden sm:inline truncate max-w-md">
-                {productName}
-              </span>
-            </div>
+            {/* Apple iPhone Style Ambient Dynamic Glow Background */}
+            <img
+              src={imgError[lightboxIndex] ? FALLBACK : (displayImages[lightboxIndex]?.url ?? FALLBACK)}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover filter blur-[90px] brightness-[0.55] scale-125 opacity-70 pointer-events-none transition-all duration-700"
+            />
 
-            <div className="flex items-center gap-3">
-              <span className="text-gold-400 font-mono text-sm font-bold">
-                {lightboxIndex + 1} of {displayImages.length}
-              </span>
+            {/* Dark Radial Gradient Backdrop */}
+            <div className="absolute inset-0 bg-radial from-transparent via-black/40 to-black/80 pointer-events-none" />
 
-              <button
-                type="button"
-                data-testid="lightbox-close"
-                onClick={closeLightbox}
-                className="w-11 h-11 rounded-full bg-white/10 hover:bg-gold-500 hover:text-navy-950 text-white transition-all z-50 flex items-center justify-center shadow-xl border border-white/20 cursor-pointer active:scale-95"
-                aria-label="Close Lightbox"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-          </div>
+            {/* Floating Glass Close Button (Top Right) */}
+            <button
+              type="button"
+              data-testid="lightbox-close"
+              onClick={closeLightbox}
+              className="fixed top-6 right-6 sm:top-8 sm:right-8 w-12 h-12 rounded-full bg-white/15 hover:bg-white/30 text-white backdrop-blur-2xl border border-white/25 shadow-2xl transition-all z-[10000000] flex items-center justify-center cursor-pointer active:scale-95 group"
+              aria-label="Close Lightbox"
+            >
+              <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+            </button>
 
-          {/* Center Main Expanded Image Stage */}
-          <div
-            className="relative w-full h-[78vh] sm:h-[82vh] flex items-center justify-center my-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Prev Arrow */}
+            {/* Glass Prev Arrow */}
             {displayImages.length > 1 && (
               <button
                 type="button"
                 onClick={lbPrev}
-                className="absolute left-2 sm:left-8 w-12 h-12 rounded-full bg-white/10 hover:bg-gold-500 hover:text-navy-950 text-white backdrop-blur-md transition-all z-50 flex items-center justify-center border border-white/20 shadow-2xl cursor-pointer active:scale-95"
+                className="fixed left-4 sm:left-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/15 hover:bg-white/30 text-white backdrop-blur-2xl transition-all z-[10000000] flex items-center justify-center border border-white/25 shadow-2xl cursor-pointer active:scale-95 group"
                 aria-label="Previous image"
               >
-                <ChevronLeft className="w-7 h-7" />
+                <ChevronLeft className="w-8 h-8 group-hover:-translate-x-0.5 transition-transform" />
               </button>
             )}
 
-            {/* High Res Expanded Image */}
-            <img
-              src={imgError[lightboxIndex] ? FALLBACK : (displayImages[lightboxIndex]?.url ?? FALLBACK)}
-              alt={displayImages[lightboxIndex]?.alt ?? productName}
-              className="max-h-full max-w-[92vw] sm:max-w-[85vw] object-contain rounded-2xl shadow-2xl border border-white/10"
-              onError={() => setImgError((prev) => ({ ...prev, [lightboxIndex]: true }))}
-            />
+            {/* Main Crisp Suit Image in Viewport Center */}
+            <div
+              className="relative z-40 max-w-[92vw] max-h-[90vh] flex items-center justify-center p-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={imgError[lightboxIndex] ? FALLBACK : (displayImages[lightboxIndex]?.url ?? FALLBACK)}
+                alt={displayImages[lightboxIndex]?.alt ?? productName}
+                className="max-h-[88vh] max-w-[90vw] object-contain rounded-3xl shadow-[0_30px_90px_rgba(0,0,0,0.85)] border border-white/15 transition-all duration-300"
+                onError={() => setImgError((prev) => ({ ...prev, [lightboxIndex]: true }))}
+              />
+            </div>
 
-            {/* Next Arrow */}
+            {/* Glass Next Arrow */}
             {displayImages.length > 1 && (
               <button
                 type="button"
                 onClick={lbNext}
-                className="absolute right-2 sm:right-8 w-12 h-12 rounded-full bg-white/10 hover:bg-gold-500 hover:text-navy-950 text-white backdrop-blur-md transition-all z-50 flex items-center justify-center border border-white/20 shadow-2xl cursor-pointer active:scale-95"
+                className="fixed right-4 sm:right-10 top-1/2 -translate-y-1/2 w-14 h-14 rounded-full bg-white/15 hover:bg-white/30 text-white backdrop-blur-2xl transition-all z-[10000000] flex items-center justify-center border border-white/25 shadow-2xl cursor-pointer active:scale-95 group"
                 aria-label="Next image"
               >
-                <ChevronRight className="w-7 h-7" />
+                <ChevronRight className="w-8 h-8 group-hover:translate-x-0.5 transition-transform" />
               </button>
             )}
-          </div>
 
-          {/* Bottom Full Gallery Thumbnail Strip */}
-          {displayImages.length > 1 && (
-            <div
-              className="w-full max-w-2xl flex items-center justify-center gap-2 overflow-x-auto py-2 z-50 scrollbar-none"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {displayImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setLightboxIndex(idx)}
-                  className={`relative w-14 h-18 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 cursor-pointer ${
-                    idx === lightboxIndex
-                      ? 'border-gold-400 ring-2 ring-gold-400/50 scale-110 shadow-lg'
-                      : 'border-white/20 opacity-50 hover:opacity-100 hover:border-white/50'
-                  }`}
-                >
-                  <img
-                    src={imgError[idx] ? FALLBACK : img.url}
-                    alt={img.alt}
-                    className="w-full h-full object-cover object-top"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+            {/* Minimal iPhone Style Dots Indicator at Bottom */}
+            {displayImages.length > 1 && (
+              <div
+                className="fixed bottom-6 inset-x-0 flex items-center justify-center gap-2 z-[10000000] pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-black/40 backdrop-blur-2xl px-4 py-2 rounded-full border border-white/15 flex items-center gap-2 shadow-2xl">
+                  {displayImages.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setLightboxIndex(idx)}
+                      className={`transition-all duration-300 rounded-full cursor-pointer ${
+                        idx === lightboxIndex
+                          ? 'w-6 h-2 bg-amber-400 shadow-md'
+                          : 'w-2 h-2 bg-white/40 hover:bg-white/80'
+                      }`}
+                      aria-label={`Go to slide ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
