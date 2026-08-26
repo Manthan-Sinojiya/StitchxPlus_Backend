@@ -1,0 +1,14 @@
+# Stitchx Plus LLC - Robots.txt
+User-agent: *
+Allow: /
+Allow: /collections
+Allow: /product/
+Allow: /products/
+Allow: /customize
+
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /api/
+
+Sitemap: https://stitchxplus.com/sitemap.xml

@@ -1,0 +1,94 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: #FAF8F5;
+    color: #15171D;
+  }
+
+  body {
+    background-color: #FAF8F5;
+    color: #15171D;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-heading {
+    font-family: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+    color: #0E0F13;
+  }
+
+  /* Accessible Focus Ring across all interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid #B38E46 !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 4px rgba(179, 142, 70, 0.2) !important;
+  }
+}
+
+/* Reduced Motion Handling for Accessibility (WCAG 2.2 AA) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F2EB;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DADEE5;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #B38E46;
+}
+
+/* Unified Layout Utility Classes */
+@layer components {
+  /* Standard Page Container */
+  .site-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Standard Major Section Padding */
+  .section-padding {
+    @apply py-12 md:py-16 lg:py-24;
+  }
+
+  /* Compact Section Padding */
+  .section-padding-sm {
+    @apply py-8 md:py-12;
+  }
+}

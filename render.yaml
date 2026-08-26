@@ -1,0 +1,34 @@
+services:
+  # 1. Backend Web Service (Express Node API)
+  - type: web
+    name: stitchx-plus-backend
+    env: node
+    buildCommand: npm install && npm run build --workspace=server
+    startCommand: npm run start --workspace=server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false # Set your MongoDB Atlas connection string in Render Dashboard
+      - key: CLIENT_ORIGIN
+        sync: false # Set to your Render Frontend URL e.g. https://stitchx-plus-frontend.onrender.com
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+
+  # 2. Frontend Static Site (React / Vite)
+  - type: web
+    name: stitchx-plus-frontend
+    env: static
+    buildCommand: npm install && npm run build --workspace=client
+    staticPublishPath: ./client/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # Set to https://stitchx-plus-backend.onrender.com/api

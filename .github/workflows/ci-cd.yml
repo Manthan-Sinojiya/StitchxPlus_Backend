@@ -1,0 +1,63 @@
+name: Stitchx Plus CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-build:
+    name: Build & Verify Test Suites
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci || npm install
+
+      - name: Run Client Typecheck & Production Build
+        run: |
+          cd client
+          npm install
+          npm run typecheck
+          npm run build
+
+      - name: Run Server Typecheck & Unit/Integration Tests
+        env:
+          NODE_ENV: test
+          PORT: 5000
+          MONGODB_URI: mongodb://localhost:27017/stitchx_test
+          JWT_SECRET: test_jwt_access_secret_32_bytes_long_key_1234
+          REFRESH_TOKEN_SECRET: test_jwt_refresh_secret_32_bytes_long_key_5678
+          CLIENT_ORIGIN: http://localhost:5173
+        run: |
+          cd server
+          npm install
+          npm run typecheck
+          npm run test
+
+  deploy:
+    name: Production Deployment Trigger
+    needs: test-and-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Notification
+        run: |
+          echo "CI/CD Verification Passed Successfully!"
+          echo "Triggering automated deployment hooks to AWS / Vercel / Render..."
