@@ -19,6 +19,46 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+export function getHumanReadableError(rawError: any, status?: number): string {
+  if (status === 401) {
+    return 'Invalid email or password. Please verify your credentials and try again.';
+  }
+  if (status === 403) {
+    return 'You do not have permission to perform this action.';
+  }
+  if (status === 404) {
+    return 'The requested server endpoint was not found (404). Please verify your backend API URL.';
+  }
+  if (status && status >= 500) {
+    return 'The backend server encountered an issue (500 Error). Please try again in a few moments.';
+  }
+
+  const msg = typeof rawError === 'string' ? rawError : rawError?.message || '';
+
+  if (
+    msg.includes('JSON.parse') ||
+    msg.includes('unexpected character') ||
+    msg.includes('Unexpected token') ||
+    msg.includes('is not valid JSON')
+  ) {
+    return 'Unable to process server response. Please verify that your backend API is online and returning JSON.';
+  }
+
+  if (
+    msg.includes('Failed to fetch') ||
+    msg.includes('NetworkError') ||
+    msg.includes('Network request failed')
+  ) {
+    return 'Unable to reach the backend server. Please check your internet connection or server deployment status.';
+  }
+
+  if (msg === 'Invalid credentials' || msg === 'Unauthorized') {
+    return 'Invalid email or password. Please check your credentials and try again.';
+  }
+
+  return msg || 'An unexpected error occurred. Please try again.';
+}
+
 export async function apiClient<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -52,7 +92,27 @@ export async function apiClient<T>(
 
   try {
     const response = await fetch(url, config);
-    const data: ApiResponse<T> = await response.json();
+    const text = await response.text();
+
+    let data: ApiResponse<T>;
+    try {
+      data = text ? JSON.parse(text) : ({} as ApiResponse<T>);
+    } catch (_parseErr) {
+      return {
+        success: false,
+        error: {
+          code: `HTTP_${response.status}`,
+          message: getHumanReadableError(_parseErr, response.status),
+        },
+      };
+    }
+
+    // Standardize error message if server returned non-ok or error payload
+    if (!response.ok || (data && !data.success && data.error)) {
+      if (data && data.error) {
+        data.error.message = getHumanReadableError(data.error.message, response.status);
+      }
+    }
 
     // Automatic token refresh on HTTP 401
     if (
@@ -79,7 +139,13 @@ export async function apiClient<T>(
           credentials: 'include',
         });
 
-        const refreshData = await refreshResponse.json();
+        const refreshText = await refreshResponse.text();
+        let refreshData: any;
+        try {
+          refreshData = refreshText ? JSON.parse(refreshText) : {};
+        } catch (_e) {
+          refreshData = {};
+        }
 
         if (refreshResponse.ok && refreshData.success && refreshData.data?.accessToken) {
           const newAccessToken = refreshData.data.accessToken;
@@ -109,7 +175,7 @@ export async function apiClient<T>(
       success: false,
       error: {
         code: 'NETWORK_ERROR',
-        message: error instanceof Error ? error.message : 'Network request failed',
+        message: getHumanReadableError(error),
       },
     };
   }
@@ -161,4 +227,3 @@ apiClient.delete = async function <T>(
 ): Promise<ApiResponse<T>> {
   return apiClient<T>(endpoint, { ...options, method: 'DELETE' });
 };
-
