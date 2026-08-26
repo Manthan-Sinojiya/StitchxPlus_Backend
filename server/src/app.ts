@@ -11,13 +11,10 @@ import { HealthController } from './controllers/health.controller.js';
 
 const app = express();
 
-// Security Headers
-app.use(helmet());
+// Trust reverse proxy (essential for Render / Cloudflare deployment)
+app.set('trust proxy', 1);
 
-// Global Rate Limiting Middleware
-app.use(globalRateLimiter);
-
-// CORS Configuration
+// 1. CORS Configuration (MUST be placed before rate limiter so 429 errors include CORS headers)
 const allowedOrigins = [
   env.CLIENT_ORIGIN,
   'http://localhost:5173',
@@ -52,6 +49,12 @@ app.use(
     ],
   }),
 );
+
+// 2. Security Headers
+app.use(helmet());
+
+// 3. Global Rate Limiting Middleware
+app.use(globalRateLimiter);
 
 // Cookie Parser Middleware
 app.use(cookieParser());

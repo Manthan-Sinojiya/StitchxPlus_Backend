@@ -9,15 +9,16 @@ const isDevOrTest = env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
  */
 export const globalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDevOrTest ? 1000 : 100,
+  max: isDevOrTest ? 5000 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.path === '/health',
   handler: (_req, res) => {
     sendError(
       res,
       429,
       'TOO_MANY_REQUESTS',
-      'Too many requests from this IP address, please try again after 15 minutes.',
+      'Too many requests from this IP address, please try again after a few minutes.',
     );
   },
 });
@@ -27,7 +28,7 @@ export const globalRateLimiter = rateLimit({
  */
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDevOrTest ? 500 : 20,
+  max: isDevOrTest ? 1000 : 200,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {
@@ -45,7 +46,7 @@ export const authRateLimiter = rateLimit({
  */
 export const sensitiveAuthRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDevOrTest ? 100 : 5,
+  max: isDevOrTest ? 200 : 50,
   standardHeaders: true,
   legacyHeaders: false,
   handler: (_req, res) => {
@@ -57,4 +58,3 @@ export const sensitiveAuthRateLimiter = rateLimit({
     );
   },
 });
-
