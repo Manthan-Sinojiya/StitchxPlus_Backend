@@ -64,6 +64,7 @@ export function AdminProductsPage() {
     isFeatured: false,
     isNew: true,
     isOnSale: false,
+    isDeal: false,
     colors: [] as Array<{ name: string; hex: string; image?: string; images?: Array<string | { url: string; altText?: string }> }>,
     images: [] as { url: string; altText?: string; isPrimary?: boolean }[],
     seo: {
@@ -127,6 +128,7 @@ export function AdminProductsPage() {
       isFeatured: true,
       isNew: true,
       isOnSale: true,
+      isDeal: false,
       colors: [
         { name: 'Navy Blue', hex: '#1c2536', image: '' },
         { name: 'Classic Khaki', hex: '#8c7b6c', image: '' },
@@ -193,6 +195,7 @@ export function AdminProductsPage() {
       isFeatured: product.isFeatured || false,
       isNew: product.isNew ?? true,
       isOnSale: product.isOnSale ?? Boolean(product.compareAtPrice && product.compareAtPrice > product.basePrice),
+      isDeal: (product as any).isDeal || false,
       colors: parsedColors,
       images:
         product.images && product.images.length > 0
@@ -1014,8 +1017,8 @@ export function AdminProductsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
                     <input
                       type="checkbox"
                       checked={formData.isOnSale}
@@ -1028,7 +1031,7 @@ export function AdminProductsPage() {
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
                     <input
                       type="checkbox"
                       checked={formData.isNew}
@@ -1041,7 +1044,7 @@ export function AdminProductsPage() {
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
                     <input
                       type="checkbox"
                       checked={formData.isFeatured}
@@ -1054,7 +1057,20 @@ export function AdminProductsPage() {
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
+                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.isDeal}
+                      onChange={(e) => setFormData({ ...formData, isDeal: e.target.checked })}
+                      className="w-4 h-4 text-amber-600 rounded"
+                    />
+                    <div>
+                      <span className="font-bold text-xs text-slate-900 block">Mark as SPECIAL DEALS</span>
+                      <span className="text-[11px] text-slate-500">Shows in Deals & Special Sale section.</span>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
                     <input
                       type="checkbox"
                       checked={formData.isMadeToOrder}

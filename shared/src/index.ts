@@ -147,6 +147,7 @@ export interface Product {
   isNew?: boolean;
   isOnSale?: boolean;
   isSale?: boolean;
+  isDeal?: boolean;
   rating: number;
   numReviews: number;
   seo?: ProductSEO;

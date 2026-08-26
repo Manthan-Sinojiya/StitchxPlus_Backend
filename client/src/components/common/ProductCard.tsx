@@ -19,6 +19,7 @@ export interface ProductCardProps {
     isNew?: boolean;
     isOnSale?: boolean;
     isSale?: boolean;
+    isDeal?: boolean;
     isTrend?: boolean;
     tickerText?: string;
     countdownTimer?: string;
@@ -258,6 +259,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {showSale && (
             <span className="bg-navy-950/90 text-gold-400 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider backdrop-blur-xs shadow-xs border border-gold-500/20">
               SAVE {discountPercent}%
+            </span>
+          )}
+          {product.isDeal && (
+            <span className="bg-gradient-to-r from-red-600 to-amber-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs backdrop-blur-xs">
+              Special Deal
             </span>
           )}
           {product.isCustomizable !== false && (

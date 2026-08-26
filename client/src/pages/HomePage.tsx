@@ -106,7 +106,7 @@ const SAMPLE_PRODUCTS = [
 
 export function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [activeTab, setActiveTab] = useState<'new' | 'bestsellers' | 'sale'>('new');
+  const [activeTab, setActiveTab] = useState<'new' | 'bestsellers' | 'sale' | 'deals'>('new');
 
   const [homeData, setHomeData] = useState<CMSHomeData | null>(null);
   const [faqItems, setFaqItems] = useState<CMSFAQItem[]>([]);
@@ -149,7 +149,14 @@ export function HomePage() {
   }, []);
 
   // Filter product cards based on active tab
-  const displayProducts = fetchedProducts.length > 0 ? fetchedProducts : SAMPLE_PRODUCTS;
+  const rawProducts = fetchedProducts.length > 0 ? fetchedProducts : SAMPLE_PRODUCTS;
+  const displayProducts = rawProducts.filter((p: any) => {
+    if (activeTab === 'new') return p.isNew !== false;
+    if (activeTab === 'bestsellers') return p.isFeatured || p.rating >= 4.8;
+    if (activeTab === 'sale') return p.isOnSale || p.isSale || (p.compareAtPrice && p.compareAtPrice > p.basePrice);
+    if (activeTab === 'deals') return p.isDeal || p.isOnSale;
+    return true;
+  });
 
   // Priority: 1. homeData.slides if present; 2. homeData.hero if image is valid non-legacy; 3. HERO_SLIDES
   const isLegacyUnsplashImg = (url?: string) =>
@@ -286,6 +293,16 @@ export function HomePage() {
             }`}
           >
             On Sale
+          </button>
+          <button
+            onClick={() => setActiveTab('deals')}
+            className={`text-base sm:text-lg pb-3 transition-colors ${
+              activeTab === 'deals'
+                ? 'font-bold text-neutral-950 border-b-2 border-amber-600 text-amber-700 -mb-[2px]'
+                : 'font-normal text-neutral-500 hover:text-neutral-900'
+            }`}
+          >
+            Special Deals
           </button>
         </div>
 
