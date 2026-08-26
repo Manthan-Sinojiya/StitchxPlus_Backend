@@ -46,6 +46,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const productId = product._id || product.id || '';
   const productSlug = product.slug || productId;
+  const targetUrl = `/products/${productSlug}`;
 
   // Extract primary image and hover (secondary) image
   const rawImages = product.images || [];
@@ -53,7 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const primaryUrl = typeof primaryImgObj === 'string'
     ? primaryImgObj
     : primaryImgObj?.url || 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80';
-  
+
   const secondaryImgObj = rawImages.length > 1 ? rawImages[1] : null;
   const secondaryUrl = secondaryImgObj
     ? typeof secondaryImgObj === 'string'
@@ -66,18 +67,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const hasDiscount = Boolean(product.isOnSale || product.isSale || (product.compareAtPrice && product.compareAtPrice > product.basePrice));
   const discountPercent = hasDiscount && comparePrice > product.basePrice
     ? Math.round(((comparePrice - product.basePrice) / comparePrice) * 100)
-    : 20;
+    : 15;
 
   const currencySymbol = product.currency === 'EUR' ? '€' : product.currency === 'GBP' ? '£' : '$';
 
-  // Parse color swatches mapping
+  // Color swatches mapping
   const colorList: Array<{ name: string; hex: string; image?: string }> = (
     product.colors && product.colors.length > 0
       ? product.colors
       : [
-          { name: 'Khaki', hex: '#8c7b6c' },
-          { name: 'Navy', hex: '#1c2536' },
-          { name: 'White', hex: '#ffffff' },
+          { name: 'Charcoal', hex: '#2b2d31' },
+          { name: 'Navy', hex: '#1b263b' },
+          { name: 'Tan', hex: '#a8947d' },
         ]
   ).map((c, i) =>
     typeof c === 'string'
@@ -86,27 +87,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           hex: c.startsWith('#')
             ? c
             : i === 0
-            ? '#1c2536'
+            ? '#2b2d31'
             : i === 1
-            ? '#8c7b6c'
+            ? '#1b263b'
             : i === 2
-            ? '#ffffff'
+            ? '#a8947d'
             : '#4a5568',
         }
       : c,
   );
 
   const [activeColorIndex, setActiveColorIndex] = useState(0);
-
-  // Active image based on selected color swatch (if swatch has an image or images array has matching index)
   const activeSwatch = colorList[activeColorIndex];
   const colorSpecificImage = activeSwatch?.image || (rawImages[activeColorIndex] ? (typeof rawImages[activeColorIndex] === 'string' ? (rawImages[activeColorIndex] as string) : (rawImages[activeColorIndex] as any)?.url) : null);
   const displayedPrimaryUrl = colorSpecificImage || primaryUrl;
 
-  // Determine badge flags
-  const showNew = product.isNew ?? true;
   const showSale = hasDiscount;
-  const showTrend = product.isTrend ?? (product.name.length % 2 === 0);
 
   // Quick Add To Cart Handler
   const handleQuickAddToCart = async (e: React.MouseEvent) => {
@@ -135,43 +131,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   return (
-    <div className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-neutral-100 shadow-subtle hover:shadow-card transition-all duration-300 ${className}`}>
-      {/* Off-White Image Container */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#f4f4f4] rounded-2xl p-3 flex items-center justify-center">
-        <RouterLink to={`/products/${productSlug}`} className="block w-full h-full relative">
-          {/* Main Displayed Image */}
+    <div className={`group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-neutral-200/70 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${className}`}>
+      {/* Luxury Product Image Container */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#f7f7f7] flex items-center justify-center">
+        <RouterLink to={targetUrl} className="block w-full h-full relative overflow-hidden">
+          {/* Primary Image */}
           <img
             src={displayedPrimaryUrl}
             alt={product.name}
-            className={`w-full h-full object-contain mix-blend-multiply transition-all duration-500 ease-out group-hover:scale-105 ${
+            className={`w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105 ${
               secondaryUrl && !colorSpecificImage ? 'group-hover:opacity-0' : ''
             }`}
           />
-          {/* Secondary Hover Image (if present and no color swatch override) */}
+          {/* Secondary Hover Image */}
           {secondaryUrl && !colorSpecificImage && (
             <img
               src={secondaryUrl}
               alt={`${product.name} alternate view`}
-              className="absolute inset-0 w-full h-full object-contain mix-blend-multiply opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out group-hover:scale-105"
+              className="absolute inset-0 w-full h-full object-cover object-top opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-105"
             />
           )}
         </RouterLink>
 
-        {/* Top Badges (Pills) */}
-        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5 z-10 pointer-events-none">
+        {/* Top Minimal Badges */}
+        <div className="absolute top-3 left-3 flex flex-col items-start gap-1 z-10 pointer-events-none">
           {showSale && (
-            <span className="bg-[#ff3b30] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-              SALE -{discountPercent}%
+            <span className="bg-navy-950/90 text-gold-400 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider backdrop-blur-xs shadow-xs border border-gold-500/20">
+              SAVE {discountPercent}%
             </span>
           )}
-          {showNew && (
-            <span className="bg-[#4caf50] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-              NEW
-            </span>
-          )}
-          {showTrend && (
-            <span className="bg-[#ff9500] text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-xs">
-              TREND
+          {product.isCustomizable !== false && (
+            <span className="bg-white/90 text-navy-900 text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs backdrop-blur-xs border border-neutral-200">
+              Bespoke
             </span>
           )}
         </div>
@@ -181,44 +172,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <button
             type="button"
             onClick={() => onWishlistToggle(productId)}
-            className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-xs rounded-full shadow-subtle text-charcoal-700 hover:text-rose-500 hover:scale-110 transition-all z-10"
+            className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur-md rounded-full shadow-md text-navy-800 hover:text-rose-500 hover:scale-110 transition-all z-10"
             aria-label="Save to wishlist"
           >
             <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : ''}`} />
           </button>
         )}
 
-        {/* Bottom Ticker Pill */}
-        <div className="absolute bottom-2.5 inset-x-2.5 z-10 pointer-events-none">
-          {product.countdownTimer ? (
-            <div className="flex items-center justify-center">
-              <span className="bg-white text-red-500 border border-red-200 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm tracking-wide">
-                {product.countdownTimer}
-              </span>
-            </div>
-          ) : product.tickerText ? (
-            <div className="bg-black text-white text-[10px] font-extrabold py-1 px-3 rounded-full overflow-hidden whitespace-nowrap opacity-95 flex items-center justify-center gap-2">
-              <span className="truncate">{product.tickerText}</span>
-            </div>
-          ) : (
-            showSale && (
-              <div className="bg-black text-white text-[9px] font-extrabold py-1 px-3 rounded-full overflow-hidden whitespace-nowrap opacity-95 flex items-center justify-center gap-1 uppercase tracking-wider">
-                <span>✦ LIMITED TIME SALE - SAVE {discountPercent}% ✦</span>
-              </div>
-            )
-          )}
-        </div>
-
-        {/* Quick Action Hover Overlay */}
-        <div className="absolute inset-x-3 bottom-12 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 flex gap-2 z-20">
+        {/* Hover Action Overlay */}
+        <div className="absolute inset-x-3 bottom-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-3 group-hover:translate-y-0 flex items-center gap-1.5 z-20">
           <button
             type="button"
             onClick={handleQuickAddToCart}
             disabled={addingToCart}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2.5 px-3 text-[11px] font-bold uppercase tracking-wider rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition-all ${
               addedSuccess
-                ? 'bg-emerald-600 text-white'
-                : 'bg-black hover:bg-neutral-800 text-white'
+                ? 'bg-emerald-700 text-white'
+                : 'bg-navy-950 hover:bg-navy-900 text-white'
             }`}
           >
             {addingToCart ? (
@@ -229,98 +199,106 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </>
             ) : (
               <>
-                <ShoppingBag className="w-3.5 h-3.5" /> Add To Cart
+                <ShoppingBag className="w-3.5 h-3.5" /> Add To Bag
               </>
             )}
           </button>
 
-          {product.isCustomizable && (
+          {product.isCustomizable !== false && (
             <RouterLink
-              to={`/product/${productSlug}?customize=true`}
-              className="p-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-md flex items-center justify-center transition-colors"
-              title="3D Bespoke Customization"
+              to={`${targetUrl}?customize=true`}
+              className="p-2.5 bg-gold-500 hover:bg-gold-600 text-navy-950 rounded-xl shadow-lg flex items-center justify-center transition-colors shrink-0"
+              title="Bespoke Customization Studio"
             >
-              <Sparkles className="w-4 h-4 fill-white" />
+              <Sparkles className="w-4 h-4 fill-navy-950" />
             </RouterLink>
           )}
 
           <RouterLink
-            to={`/product/${productSlug}`}
-            className="p-2 bg-white hover:bg-neutral-100 text-charcoal-800 rounded-xl shadow-md flex items-center justify-center transition-colors"
-            title="View Details"
+            to={targetUrl}
+            className="p-2.5 bg-white hover:bg-neutral-100 text-navy-900 rounded-xl shadow-lg flex items-center justify-center transition-colors shrink-0 border border-neutral-200"
+            title="Quick View"
           >
             <Eye className="w-4 h-4" />
           </RouterLink>
         </div>
       </div>
 
-      {/* Content Meta Below Image */}
-      <div className="pt-3 pb-2 px-2 flex flex-col gap-1.5">
-        {/* Title */}
-        <RouterLink to={`/product/${productSlug}`} className="block">
-          <h3 className="text-sm font-medium text-neutral-900 hover:text-red-600 transition-colors line-clamp-1">
+      {/* Product Details Section */}
+      <div className="p-4 flex flex-col gap-1.5">
+        {/* Category / Sub-label */}
+        {product.category?.name && (
+          <span className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
+            {product.category.name}
+          </span>
+        )}
+
+        {/* Product Title */}
+        <RouterLink to={targetUrl} className="block group-hover:text-gold-600 transition-colors">
+          <h3 className="text-sm font-semibold text-navy-950 line-clamp-1 leading-snug">
             {product.name}
           </h3>
         </RouterLink>
 
-        {/* 5-Star Rating */}
-        <div className="flex items-center gap-1">
-          <div className="flex items-center gap-0.5 text-amber-400">
+        {/* Rating & Review Stars */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5 text-amber-500">
             {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
             ))}
           </div>
-          <span className="text-[11px] text-neutral-400 font-semibold">
-            ({product.rating ? product.rating.toFixed(1) : '5.0'})
+          <span className="text-[11px] text-neutral-500 font-medium">
+            {product.rating ? product.rating.toFixed(1) : '4.8'}
           </span>
         </div>
 
-        {/* Price Row */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm sm:text-base font-bold text-[#d9381e]">
-            {currencySymbol}{product.basePrice.toFixed(2)}
-          </span>
-          {hasDiscount && (
-            <span className="text-xs text-neutral-400 line-through">
-              {currencySymbol}{comparePrice.toFixed(2)}
+        {/* Price & Color Swatches Footer Row */}
+        <div className="flex items-center justify-between pt-1 border-t border-neutral-100 mt-1">
+          {/* Price */}
+          <div className="flex items-baseline gap-2">
+            <span className="text-base font-bold text-navy-950">
+              {currencySymbol}{product.basePrice.toFixed(2)}
             </span>
-          )}
-        </div>
+            {hasDiscount && (
+              <span className="text-xs text-neutral-400 line-through font-normal">
+                {currencySymbol}{comparePrice.toFixed(2)}
+              </span>
+            )}
+          </div>
 
-        {/* Color Swatches */}
-        <div className="flex items-center gap-1.5 pt-1">
-          {colorList.map((color, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setActiveColorIndex(idx);
-              }}
-              onMouseEnter={() => setActiveColorIndex(idx)}
-              className={`w-4 h-4 rounded-full transition-all relative ${
-                color.hex.toLowerCase() === '#ffffff' || color.hex.toLowerCase() === '#fff'
-                  ? 'border border-gray-300'
-                  : ''
-              } ${
-                activeColorIndex === idx
-                  ? 'ring-2 ring-black ring-offset-1 scale-110 shadow-xs z-10'
-                  : 'hover:scale-105 opacity-80 hover:opacity-100'
-              }`}
-              style={{ backgroundColor: color.hex }}
-              title={`${color.name}${color.image ? ' (Click to view image)' : ''}`}
-            />
-          ))}
-          {colorList.length > 0 && (
-            <span className="text-[10px] text-neutral-500 font-medium ml-1">
-              {colorList[activeColorIndex]?.name}
-            </span>
-          )}
+          {/* Color Swatches */}
+          <div className="flex items-center gap-1">
+            {colorList.slice(0, 3).map((color, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setActiveColorIndex(idx);
+                }}
+                onMouseEnter={() => setActiveColorIndex(idx)}
+                className={`w-3.5 h-3.5 rounded-full transition-all relative ${
+                  color.hex.toLowerCase() === '#ffffff' || color.hex.toLowerCase() === '#fff'
+                    ? 'border border-gray-300'
+                    : ''
+                } ${
+                  activeColorIndex === idx
+                    ? 'ring-2 ring-navy-950 ring-offset-1 scale-110 shadow-xs z-10'
+                    : 'hover:scale-105 opacity-80 hover:opacity-100'
+                }`}
+                style={{ backgroundColor: color.hex }}
+                title={color.name}
+              />
+            ))}
+            {colorList.length > 3 && (
+              <span className="text-[9px] text-neutral-400 font-medium">
+                +{colorList.length - 3}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
-
-
