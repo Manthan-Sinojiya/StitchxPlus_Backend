@@ -41,7 +41,7 @@ export interface ICartItem {
 export interface ICartDocument extends Document {
   userId?: Types.ObjectId;
   sessionId?: string;
-  items: Types.DocumentArray<ICartItem & Document>;
+  items: any;
   couponCode?: string;
   createdAt: Date;
   updatedAt: Date;

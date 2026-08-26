@@ -98,7 +98,7 @@ export class CartRepository {
 
     // Merge items from guestCart into userCart
     for (const gItem of guestCart.items) {
-      const matchIndex = userCart.items.findIndex((uItem) =>
+      const matchIndex = userCart.items.findIndex((uItem: any) =>
         this.isSameConfiguration(uItem, gItem),
       );
 

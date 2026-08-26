@@ -157,7 +157,7 @@ export class CartService {
     const cart = await this.cartRepository.findOrCreateCart(userId, sessionId);
 
     // Check if matching item exists (same productId + customization + measurement)
-    const existingIndex = cart.items.findIndex((item) => {
+    const existingIndex = cart.items.findIndex((item: any) => {
       if (item.productId.toString() !== input.productId) return false;
       const optsA = item.customization?.selectedOptions || {};
       const optsB = input.customization?.selectedOptions || {};
