@@ -13,8 +13,8 @@ import { cacheControl } from '../middlewares/cacheControl.middleware.js';
 const router = Router();
 
 // Public routes
-router.get('/', cacheControl(600), getCategories);
-router.get('/:slug', cacheControl(600), getCategoryBySlug);
+router.get('/', cacheControl(0), getCategories);
+router.get('/:slug', cacheControl(0), getCategoryBySlug);
 
 // Admin-only routes
 router.post('/', authenticate, authorize('ADMIN'), createCategory);

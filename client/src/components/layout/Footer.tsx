@@ -14,7 +14,7 @@ export function Footer() {
       if (data && Array.isArray(data.columns) && data.columns.length > 0) {
         setFooterData(data);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ export function Footer() {
   return (
     <footer className="bg-cream-100/80 text-charcoal-800 border-t border-charcoal-200/80 pt-16 pb-12 mt-20">
       {/* Brand Value Props Banner */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 border-b border-charcoal-200/60">
+      <div className="max-w-7xl mx-auto px-[8px] pb-16 border-b border-charcoal-200/60">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-white border border-charcoal-200 flex items-center justify-center text-bronze-600 shrink-0 shadow-subtle">
@@ -74,7 +74,7 @@ export function Footer() {
       </div>
 
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-[8px] py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-6">
@@ -200,6 +200,11 @@ export function Footer() {
                 </h5>
                 <ul className="space-y-2.5 text-sm text-charcoal-600">
                   <li>
+                    <Link to="/blog" className="hover:text-bronze-600 transition-colors">
+                      Atelier Journal & Blog
+                    </Link>
+                  </li>
+                  <li>
                     <Link to="/page/about" className="hover:text-bronze-600 transition-colors">
                       About Atelier
                     </Link>
@@ -227,7 +232,7 @@ export function Footer() {
       </div>
 
       {/* Bottom Copyright Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-charcoal-200/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-charcoal-500">
+      <div className="max-w-7xl mx-auto px-[8px] pt-8 border-t border-charcoal-200/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-charcoal-500">
         <p>&copy; {new Date().getFullYear()} Stitchx Plus LLC. All Rights Reserved.</p>
         <div className="flex items-center gap-6">
           <Link to="/page/terms" className="hover:text-charcoal-800 transition-colors">

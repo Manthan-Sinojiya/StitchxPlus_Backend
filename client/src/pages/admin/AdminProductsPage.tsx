@@ -17,7 +17,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { Button, Input, Select, ImageUploader, useToast, Loader, Pagination } from '../../components/ui';
+import { Button, Input, Select, ImageUploader, useToast, Loader, Pagination, RichTextEditor } from '../../components/ui';
 import { adminService } from '../../services/adminService';
 import { contentService } from '../../services/contentService';
 import { Product, Category, Fabric } from '@stitchx/shared';
@@ -81,8 +81,10 @@ export function AdminProductsPage() {
     isOnSale: false,
     isDeal: false,
     tags: [] as string[],
+    sizes: [] as string[],
+    simpleVariants: [] as Array<{ name?: string; colorName?: string; sizeName?: string; sku?: string; stockQuantity: number; inStock: boolean }>,
     colors: [] as Array<{ name: string; hex: string; image?: string; images?: Array<string | { url: string; altText?: string }> }>,
-    images: [] as { url: string; altText?: string; isPrimary?: boolean }[],
+    images: [] as { url: string; altText?: string; isPrimary?: boolean; isHover?: boolean }[],
     seo: {
       metaTitle: '',
       metaDescription: '',
@@ -149,6 +151,8 @@ export function AdminProductsPage() {
       isOnSale: true,
       isDeal: false,
       tags: [],
+      sizes: ['S', 'M', 'L', 'XL'],
+      simpleVariants: [],
       colors: [
         { name: 'Navy Blue', hex: '#1c2536', image: '' },
         { name: 'Classic Khaki', hex: '#8c7b6c', image: '' },
@@ -217,19 +221,27 @@ export function AdminProductsPage() {
       isOnSale: product.isOnSale ?? Boolean(product.compareAtPrice && product.compareAtPrice > product.basePrice),
       isDeal: (product as any).isDeal || false,
       tags: (product as any).tags || (product as any).customSections || [],
+      sizes: (product as any).sizes || ['S', 'M', 'L', 'XL'],
+      simpleVariants: (product as any).simpleVariants || [],
       colors: parsedColors,
       images:
         product.images && product.images.length > 0
-          ? product.images.map((img: any) =>
+          ? product.images.map((img: any, i: number) =>
               typeof img === 'string'
-                ? { url: img, altText: product.name, isPrimary: false }
-                : { url: img.url || '', altText: img.altText || product.name, isPrimary: img.isPrimary || false }
+                ? { url: img, altText: product.name, isPrimary: i === 0, isHover: i === 1 }
+                : {
+                    url: img.url || '',
+                    altText: img.altText || product.name,
+                    isPrimary: img.isPrimary ?? (i === 0),
+                    isHover: img.isHover ?? (i === 1),
+                  }
             )
           : [
               {
                 url: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80',
                 altText: product.name,
                 isPrimary: true,
+                isHover: false,
               },
             ],
       seo: {
@@ -333,18 +345,25 @@ export function AdminProductsPage() {
 
   // Filter & Pagination calculations
   const filteredProducts = products.filter((p) => {
+    const s = search.toLowerCase().trim();
+
+    const pCatObj = typeof p.category === 'object' && p.category !== null ? (p.category as any) : null;
+    const pCatName = pCatObj?.name || '';
+    const pCatId = pCatObj ? String(pCatObj._id || pCatObj.id || '') : String(p.category || '');
+
+    const pFabObj = typeof p.fabricRef === 'object' && p.fabricRef !== null ? (p.fabricRef as any) : null;
+    const pFabName = pFabObj?.name || '';
+
     const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku?.toLowerCase().includes(search.toLowerCase());
+      !s ||
+      p.name.toLowerCase().includes(s) ||
+      (p.sku && p.sku.toLowerCase().includes(s)) ||
+      (p.description && p.description.toLowerCase().includes(s)) ||
+      pCatName.toLowerCase().includes(s) ||
+      pFabName.toLowerCase().includes(s) ||
+      (p.tags && p.tags.some((t: string) => t.toLowerCase().includes(s)));
 
-    const pCatId =
-      typeof p.category === 'object' && p.category !== null
-        ? String((p.category as any)._id || (p.category as any).id || '')
-        : String(p.category || '');
-
-    const matchesCategory =
-      categoryFilter === 'all' || pCatId === String(categoryFilter);
-
+    const matchesCategory = categoryFilter === 'all' || pCatId === String(categoryFilter);
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -530,18 +549,13 @@ export function AdminProductsPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Full Craftsmanship Narrative & Specifications
-                  </label>
-                  <textarea
-                    rows={6}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Provide full sartorial details, lapel design, lining materials, and button details..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-900 focus:outline-none focus:border-amber-500 font-sans"
-                  />
-                </div>
+                <RichTextEditor
+                  label="Full Craftsmanship Narrative & Specifications"
+                  value={formData.description}
+                  onChange={(val) => setFormData({ ...formData, description: val })}
+                  placeholder="Provide full sartorial details, lapel design, lining materials, and button details..."
+                  minHeight="220px"
+                />
               </div>
             )}
 
@@ -584,11 +598,23 @@ export function AdminProductsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {formData.images.map((img, idx) => (
                     <div key={idx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-3 relative">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                          <Tag className="w-3.5 h-3.5 text-amber-600" />
-                          Image {idx + 1} {img.isPrimary && <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold">PRIMARY COVER</span>}
-                        </span>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-bold text-slate-900 flex items-center gap-1">
+                            <Tag className="w-3.5 h-3.5 text-amber-600" />
+                            Image {idx + 1}
+                          </span>
+                          {img.isPrimary && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-800 font-bold border border-amber-300">
+                              PRIMARY COVER
+                            </span>
+                          )}
+                          {img.isHover && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-indigo-100 text-indigo-800 font-bold border border-indigo-300">
+                              HOVER IMAGE
+                            </span>
+                          )}
+                        </div>
 
                         <div className="flex items-center gap-2">
                           {!img.isPrimary && (
@@ -598,12 +624,31 @@ export function AdminProductsPage() {
                                 const updated = formData.images.map((im, i) => ({
                                   ...im,
                                   isPrimary: i === idx,
+                                  isHover: i === idx ? false : im.isHover,
                                 }));
                                 setFormData({ ...formData, images: updated });
                               }}
                               className="text-[11px] font-bold text-amber-700 hover:underline"
+                              title="Set as Main Cover Image"
                             >
                               Set Primary
+                            </button>
+                          )}
+                          {!img.isHover && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updated = formData.images.map((im, i) => ({
+                                  ...im,
+                                  isHover: i === idx,
+                                  isPrimary: i === idx ? false : im.isPrimary,
+                                }));
+                                setFormData({ ...formData, images: updated });
+                              }}
+                              className="text-[11px] font-bold text-indigo-700 hover:underline"
+                              title="Set as Card Hover View"
+                            >
+                              Set Hover Image
                             </button>
                           )}
                           <button
@@ -613,6 +658,7 @@ export function AdminProductsPage() {
                               setFormData({ ...formData, images: updated });
                             }}
                             className="p-1 text-slate-400 hover:text-red-600 rounded"
+                            title="Remove Image Slot"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -977,7 +1023,7 @@ export function AdminProductsPage() {
               </div>
             )}
 
-            {/* TAB 3: BESPOKE OPTIONS */}
+            {/* TAB 3: BESPOKE & VARIANT OPTIONS */}
             {activeTab === 'customization' && (
               <div className="space-y-6">
                 <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer">
@@ -989,11 +1035,14 @@ export function AdminProductsPage() {
                   />
                   <div>
                     <span className="font-bold text-xs text-slate-900 block">Enable 3D Customization Engine</span>
-                    <span className="text-[11px] text-slate-500">Allows customers to customize lapels, buttons, linings, and monograms.</span>
+                    <span className="text-[11px] text-slate-500">
+                      When enabled, product is treated as a bespoke garment with customizer options (lapels, monograms, linings).
+                      When disabled, product displays as a simple ready-to-wear item with color & size variant matrix.
+                    </span>
                   </div>
                 </label>
 
-                {formData.isCustomizable && (
+                {formData.isCustomizable ? (
                   <div className="space-y-3">
                     <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                       Attach Customization Option Groups
@@ -1030,6 +1079,272 @@ export function AdminProductsPage() {
                         );
                       })}
                     </div>
+                  </div>
+                ) : (
+                  /* SIMPLE PRODUCT VARIANT MATRIX MANAGEMENT UI */
+                  <div className="space-y-6 bg-slate-50/80 p-6 rounded-2xl border border-slate-200/90">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                          <Layers className="w-4 h-4 text-amber-600" />
+                          Simple Product Variants (Color & Size Matrix)
+                        </h4>
+                        <p className="text-xs text-slate-500">
+                          Define size options and manage inventory quantities per color and size combination.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newV = {
+                              name: 'New Variant',
+                              colorName: formData.colors[0]?.name || 'Default',
+                              sizeName: formData.sizes[0] || 'One Size',
+                              sku: `${(formData.sku || 'SKU').toUpperCase()}-VAR-${formData.simpleVariants.length + 1}`,
+                              stockQuantity: 10,
+                              inStock: true,
+                            };
+                            setFormData({ ...formData, simpleVariants: [...formData.simpleVariants, newV] });
+                            toast('info', 'Variant Added', 'Added a new custom variant row.');
+                          }}
+                          className="px-3.5 py-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-colors flex items-center gap-1.5"
+                        >
+                          <Plus className="w-4 h-4" /> Add Single Variant
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const activeColors = formData.colors.length > 0 ? formData.colors.map(c => c.name) : ['Default Color'];
+                            const activeSizes = formData.sizes.length > 0 ? formData.sizes : ['One Size'];
+                            const newVariants: Array<{ name?: string; colorName?: string; sizeName?: string; sku?: string; stockQuantity: number; inStock: boolean }> = [];
+
+                            activeColors.forEach((colorName) => {
+                              activeSizes.forEach((sizeName) => {
+                                const existing = formData.simpleVariants.find(
+                                  v => (v.colorName === colorName || v.name?.includes(colorName)) &&
+                                       (v.sizeName === sizeName || v.name?.includes(sizeName))
+                                );
+
+                                const skuPrefix = formData.sku ? formData.sku.toUpperCase() : 'SKU';
+                                const colorTag = colorName.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+                                const sizeTag = sizeName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+                                if (existing) {
+                                  newVariants.push({
+                                    ...existing,
+                                    colorName,
+                                    sizeName,
+                                    sku: existing.sku || `${skuPrefix}-${colorTag}-${sizeTag}`,
+                                  });
+                                } else {
+                                  newVariants.push({
+                                    name: `${colorName} / ${sizeName}`,
+                                    colorName,
+                                    sizeName,
+                                    sku: `${skuPrefix}-${colorTag}-${sizeTag}`,
+                                    stockQuantity: 10,
+                                    inStock: true,
+                                  });
+                                }
+                              });
+                            });
+
+                            setFormData({ ...formData, simpleVariants: newVariants });
+                            toast('info', 'Matrix Generated', `Generated ${newVariants.length} color/size combinations.`);
+                          }}
+                          className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                        >
+                          <Sparkles className="w-4 h-4" /> Auto-Generate Matrix
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Size Options Management */}
+                    <div className="space-y-3">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Garment Sizes (Comma Separated or Pick Presets)
+                      </label>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="text-[11px] text-slate-500 font-semibold">Presets:</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] })}
+                          className="px-2.5 py-1 bg-white border border-slate-200 hover:border-amber-400 rounded-lg text-[11px] font-bold text-slate-700 transition-colors"
+                        >
+                          Apparel (XS–XXL)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, sizes: ['36R', '38R', '40R', '42R', '44R', '46R'] })}
+                          className="px-2.5 py-1 bg-white border border-slate-200 hover:border-amber-400 rounded-lg text-[11px] font-bold text-slate-700 transition-colors"
+                        >
+                          Jacket / Suit Chest (36R–46R)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, sizes: ['30', '32', '34', '36', '38', '40'] })}
+                          className="px-2.5 py-1 bg-white border border-slate-200 hover:border-amber-400 rounded-lg text-[11px] font-bold text-slate-700 transition-colors"
+                        >
+                          Trouser Waist (30–40)
+                        </button>
+                      </div>
+
+                      <Input
+                        value={formData.sizes.join(', ')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const splitSizes = val.split(',').map((s) => s.trim()).filter(Boolean);
+                          setFormData({ ...formData, sizes: splitSizes });
+                        }}
+                        placeholder="e.g. S, M, L, XL or 38R, 40R, 42R"
+                      />
+                    </div>
+
+                    {/* Variant Combinations Table */}
+                    {formData.simpleVariants.length > 0 ? (
+                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-100/80 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                            <tr>
+                              <th className="py-2.5 px-3">Color</th>
+                              <th className="py-2.5 px-3">Size</th>
+                              <th className="py-2.5 px-3">Variant SKU</th>
+                              <th className="py-2.5 px-3">Stock Quantity</th>
+                              <th className="py-2.5 px-3">In Stock</th>
+                              <th className="py-2.5 px-3 text-right">Remove</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {formData.simpleVariants.map((v, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50">
+                                <td className="py-2.5 px-3 font-semibold text-slate-900">
+                                  {v.colorName || 'Default'}
+                                </td>
+                                <td className="py-2.5 px-3 font-bold text-amber-700">
+                                  {v.sizeName || 'One Size'}
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <input
+                                    type="text"
+                                    value={v.sku || ''}
+                                    onChange={(e) => {
+                                      const updated = [...formData.simpleVariants];
+                                      updated[idx].sku = e.target.value;
+                                      setFormData({ ...formData, simpleVariants: updated });
+                                    }}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-mono"
+                                  />
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <input
+                                    type="number"
+                                    value={v.stockQuantity}
+                                    onChange={(e) => {
+                                      const qty = parseInt(e.target.value, 10) || 0;
+                                      const updated = [...formData.simpleVariants];
+                                      updated[idx].stockQuantity = qty;
+                                      updated[idx].inStock = qty > 0;
+                                      setFormData({ ...formData, simpleVariants: updated });
+                                    }}
+                                    className="w-24 bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs font-bold"
+                                  />
+                                </td>
+                                <td className="py-2.5 px-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={v.inStock ?? v.stockQuantity > 0}
+                                    onChange={(e) => {
+                                      const updated = [...formData.simpleVariants];
+                                      updated[idx].inStock = e.target.checked;
+                                      setFormData({ ...formData, simpleVariants: updated });
+                                    }}
+                                    className="w-4 h-4 text-amber-600 rounded"
+                                  />
+                                </td>
+                                <td className="py-2.5 px-3 text-right">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = formData.simpleVariants.filter((_, i) => i !== idx);
+                                      setFormData({ ...formData, simpleVariants: updated });
+                                    }}
+                                    className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="py-8 bg-white rounded-xl border border-dashed border-slate-300 text-center space-y-3 p-6">
+                        <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto">
+                          <Layers className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-800">No variant combination matrix built yet.</p>
+                          <p className="text-[11px] text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+                            Type garment sizes above (or click a Preset), then click <strong>Auto-Generate Matrix</strong> to create stock rows for all color & size pairings, or click <strong>Add Single Variant</strong> to add manually.
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newV = {
+                                name: 'New Variant',
+                                colorName: formData.colors[0]?.name || 'Default',
+                                sizeName: formData.sizes[0] || 'One Size',
+                                sku: `${(formData.sku || 'SKU').toUpperCase()}-VAR-1`,
+                                stockQuantity: 10,
+                                inStock: true,
+                              };
+                              setFormData({ ...formData, simpleVariants: [newV] });
+                              toast('info', 'Variant Added', 'Added a new custom variant row.');
+                            }}
+                            className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-800 font-bold text-xs rounded-lg transition-colors inline-flex items-center gap-1.5"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> + Add Single Variant
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const activeColors = formData.colors.length > 0 ? formData.colors.map(c => c.name) : ['Default Color'];
+                              const activeSizes = formData.sizes.length > 0 ? formData.sizes : ['One Size'];
+                              const newVariants: Array<{ name?: string; colorName?: string; sizeName?: string; sku?: string; stockQuantity: number; inStock: boolean }> = [];
+
+                              activeColors.forEach((colorName) => {
+                                activeSizes.forEach((sizeName) => {
+                                  const skuPrefix = formData.sku ? formData.sku.toUpperCase() : 'SKU';
+                                  const colorTag = colorName.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+                                  const sizeTag = sizeName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+                                  newVariants.push({
+                                    name: `${colorName} / ${sizeName}`,
+                                    colorName,
+                                    sizeName,
+                                    sku: `${skuPrefix}-${colorTag}-${sizeTag}`,
+                                    stockQuantity: 10,
+                                    inStock: true,
+                                  });
+                                });
+                              });
+
+                              setFormData({ ...formData, simpleVariants: newVariants });
+                              toast('info', 'Matrix Generated', `Generated ${newVariants.length} color/size combinations.`);
+                            }}
+                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg transition-colors inline-flex items-center gap-1.5"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" /> Auto-Generate Matrix Now
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

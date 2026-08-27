@@ -48,8 +48,8 @@ export function Header() {
       const catList = Array.isArray(catRes?.data)
         ? catRes.data
         : Array.isArray(catRes)
-        ? catRes
-        : [];
+          ? catRes
+          : [];
 
       setCategories(catList.filter((c: any) => c.isActive !== false));
 
@@ -100,47 +100,84 @@ export function Header() {
     }
   };
 
-  // Build dynamic category sub-menu links
-  const categorySubItems = categories.map((cat) => ({
+  // Build dynamic department & category navigation structure from DB
+  const departments = categories.filter(
+    (c: any) => (c.isTopLevel || c.type === 'department' || !c.parentCategory) && c.isActive !== false
+  );
+  const subCategories = categories.filter(
+    (c: any) => (!c.isTopLevel && c.type !== 'department' && !!c.parentCategory) && c.isActive !== false
+  );
+
+  const departmentNavItems = departments.map((dept) => {
+    const deptId = dept.id || (dept as any)._id;
+    const children = subCategories
+      .filter((c: any) => {
+        const parentId = typeof c.parentCategory === 'object' ? (c.parentCategory?.id || (c.parentCategory as any)?._id) : c.parentCategory;
+        return parentId === deptId;
+      })
+      .map((c) => ({
+        id: c.id || (c as any)._id,
+        label: c.name,
+        link: `/collections?department=${dept.slug}&category=${c.slug || c.name.toLowerCase()}`,
+      }));
+
+    return {
+      id: `dept-${dept.slug}`,
+      label: dept.name,
+      link: `/collections?department=${dept.slug}`,
+      children: children.length > 0 ? children : undefined,
+    };
+  });
+
+  const categorySubItems = (subCategories.length > 0 ? subCategories : categories).map((cat) => ({
     id: cat.id || (cat as any)._id,
     label: cat.name,
     link: `/collections?category=${cat.slug || cat.name.toLowerCase()}`,
   }));
 
-  const fallbackCategoryChildren =
-    categorySubItems.length > 0
-      ? categorySubItems
-      : [
-          { id: 'cat-suits', label: 'Bespoke Suits', link: '/collections?category=suits' },
-          { id: 'cat-tuxedos', label: 'Luxury Tuxedos', link: '/collections?category=tuxedos' },
-          { id: 'cat-shirts', label: 'Tailored Shirts', link: '/collections?category=shirts' },
-        ];
+  let navItems: CMSNavItem[] = [];
 
-  const processedNavItems: CMSNavItem[] =
-    cmsNavItems.length > 0
-      ? cmsNavItems.map((item) => {
-          const isCollectionsLink =
-            item.link === '/collections' ||
-            item.label.toLowerCase().includes('collection');
+  if (cmsNavItems && cmsNavItems.length > 0) {
+    // Render EXACTLY what the admin configured in the CMS Navigation Panel
+    navItems = cmsNavItems.map((item) => {
+      const isCollectionsLink =
+        item.link === '/collections' ||
+        item.label.toLowerCase().includes('collection') ||
+        item.label.toLowerCase().includes('department') ||
+        item.label.toLowerCase().includes('category');
 
-          if (isCollectionsLink && (!item.children || item.children.length === 0)) {
-            return {
-              ...item,
-              children: fallbackCategoryChildren,
-            };
-          }
-          return item;
-        })
-      : [
-          { id: 'n-home', label: 'Home', link: '/' },
-          {
-            id: 'n-collections',
-            label: 'Collections',
-            link: '/collections',
-            children: fallbackCategoryChildren,
-          },
-          { id: 'n-customize', label: 'Customize Studio', link: '/customize' },
-        ];
+      if (isCollectionsLink && (!item.children || item.children.length === 0)) {
+        const dynamicChildren = departmentNavItems.length > 0
+          ? departmentNavItems.flatMap(d => d.children || [{ id: d.id, label: d.label, link: d.link }])
+          : categorySubItems;
+
+        if (dynamicChildren.length > 0) {
+          return {
+            ...item,
+            children: dynamicChildren,
+          };
+        }
+      }
+      return item;
+    });
+  } else {
+    // If no custom CMS navigation configured, dynamically render Home, active DB departments/categories, & core studio links
+    navItems = [
+      { id: 'n-home', label: 'Home', link: '/' },
+      ...(departmentNavItems.length > 0
+        ? departmentNavItems
+        : [
+            {
+              id: 'n-collections',
+              label: 'Collections',
+              link: '/collections',
+              children: categorySubItems.length > 0 ? categorySubItems : undefined,
+            },
+          ]),
+      { id: 'n-customize', label: 'Customize Studio', link: '/customize' },
+      { id: 'n-blog', label: 'Journal', link: '/blog' },
+    ];
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-charcoal-200/80 text-charcoal-950 transition-all shadow-subtle">
@@ -158,7 +195,7 @@ export function Header() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-[8px] h-20 flex items-center justify-between gap-4 relative">
         {/* Mobile Hamburger Menu Toggle */}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
@@ -184,17 +221,22 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-charcoal-700">
-          {processedNavItems.map((item) => {
-            const hasChildren = item.children && item.children.length > 0;
+        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-charcoal-700 h-20">
+          {navItems.map((item) => {
+            const hasColumns = item.columns && item.columns.length > 0;
+            const hasChildren = (item.children && item.children.length > 0) || hasColumns;
+            const isMega = item.isMegaMenu || hasColumns;
             const isCustomize = item.link === '/customize';
 
             return (
-              <div key={item.id || item.link} className="relative group py-2">
+              <div
+                key={item.id || item.link}
+                className={`${isMega ? 'static' : 'relative'} group h-20 flex items-center`}
+              >
                 <Link
                   to={item.link}
-                  className={`hover:text-bronze-600 transition-colors py-2 flex items-center gap-1.5 font-medium ${
-                    isCustomize ? 'text-bronze-600 hover:text-bronze-700 font-semibold' : ''
+                  className={`hover:text-bronze-600 transition-colors py-2 flex items-center gap-1.5 font-semibold text-sm ${
+                    isCustomize ? 'text-bronze-600 hover:text-bronze-700 font-bold' : ''
                   }`}
                 >
                   {isCustomize && <Sparkles className="w-3.5 h-3.5" />}
@@ -205,44 +247,108 @@ export function Header() {
                 </Link>
 
                 {/* Sub-menu Dropdown on Hover */}
-                {hasChildren && (
-                  <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[230px]">
-                    <div className="bg-white/95 backdrop-blur-md border border-slate-200/90 rounded-2xl shadow-xl p-2 space-y-1">
-                      {item.children!.map((child) => (
-                        <Link
-                          key={child.id || child.link}
-                          to={child.link}
-                          className="block px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-800 hover:text-amber-800 hover:bg-amber-50/80 transition-colors"
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
+                {hasChildren &&
+                  (isMega ? (
+                    /* Mega Menu Multi-Column Dropdown */
+                    <div className="absolute left-0 right-0 top-full pt-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 pointer-events-none group-hover:pointer-events-auto px-4">
+                      <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col md:flex-row gap-8 max-w-6xl mx-auto z-50">
+                        {/* Multi-Column Headings & Links */}
+                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                          {(item.columns && item.columns.length > 0
+                            ? item.columns
+                            : [
+                                {
+                                  id: 'col_fallback',
+                                  title: 'CATEGORIES',
+                                  links: (item.children || []).map((c, i) => ({
+                                    id: c.id || `sub_${i}`,
+                                    label: c.label,
+                                    link: c.link,
+                                    badge: (c as any).badge,
+                                  })),
+                                },
+                              ]
+                          ).map((col, cIdx) => (
+                            <div key={(col as any).id || cIdx} className="space-y-4">
+                              <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-900 border-b border-slate-200 pb-2.5">
+                                {col.title}
+                              </h4>
+                              <ul className="space-y-2.5">
+                                {col.links.map((sub, sIdx) => (
+                                  <li key={(sub as any).id || sIdx}>
+                                    <Link
+                                      to={sub.link}
+                                      className="group/link flex items-center justify-between text-xs sm:text-sm font-medium text-slate-700 hover:text-amber-600 transition-colors"
+                                    >
+                                      <span className="group-hover/link:translate-x-1 transition-transform inline-block">
+                                        {sub.label}
+                                      </span>
+                                      {sub.badge && (
+                                        <span
+                                          className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                                            sub.badge.toLowerCase().includes('hot')
+                                              ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                              : sub.badge.toLowerCase().includes('new')
+                                              ? 'bg-purple-50 text-purple-600 border-purple-200'
+                                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                                          }`}
+                                        >
+                                          {sub.badge}
+                                        </span>
+                                      )}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Featured Promo Banner Card */}
+                        {item.megaImage && (
+                          <div className="w-full md:w-[260px] lg:w-[290px] shrink-0">
+                            <Link
+                              to={item.megaImageLink || item.link}
+                              className="group/banner relative block rounded-2xl overflow-hidden aspect-[4/3] md:aspect-[3/4] border border-slate-200/80 shadow-md hover:shadow-xl transition-all duration-500 bg-slate-950"
+                            >
+                              <img
+                                src={item.megaImage}
+                                alt={item.megaImageTitle || item.label}
+                                className="absolute inset-0 w-full h-full object-cover object-center group-hover/banner:scale-105 transition-transform duration-700 ease-out opacity-90"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                              <div className="absolute bottom-4 left-4 right-4 z-10 text-white space-y-1">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
+                                  Featured
+                                </span>
+                                <h5 className="text-lg sm:text-xl font-bold font-serif leading-tight text-white drop-shadow-sm">
+                                  {item.megaImageTitle || `Shop ${item.label}`}
+                                </h5>
+                              </div>
+                            </Link>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    /* Simple Dropdown */
+                    <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 min-w-[230px]">
+                      <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 space-y-1">
+                        {item.children!.map((child) => (
+                          <Link
+                            key={child.id || child.link}
+                            to={child.link}
+                            className="block px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-800 hover:text-amber-800 hover:bg-amber-50/80 transition-colors"
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
               </div>
             );
           })}
-
-          {isAuthenticated ? (
-            <Link to="/account" className="hover:text-bronze-600 transition-colors py-2">
-              My Profile
-            </Link>
-          ) : (
-            <Link to="/login" className="hover:text-bronze-600 transition-colors py-2">
-              Sign In
-            </Link>
-          )}
-
-          {user?.role === 'ADMIN' && (
-            <Link
-              to="/admin"
-              className="flex items-center gap-1 text-bronze-700 font-bold hover:text-bronze-800 py-2 text-xs uppercase tracking-wider bg-bronze-50 px-3 py-1.5 rounded-xl border border-bronze-200"
-            >
-              <ShieldAlert className="w-3.5 h-3.5 text-bronze-600" />
-              <span>Admin Portal</span>
-            </Link>
-          )}
         </nav>
 
         {/* IN-BUILT INLINE SEARCH BAR IN NAVBAR */}
@@ -270,10 +376,20 @@ export function Header() {
         </form>
 
         {/* Header Action Icons */}
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {user?.role === 'ADMIN' && (
+            <Link
+              to="/admin"
+              className="hidden md:flex items-center gap-1.5 text-bronze-800 font-bold hover:text-bronze-950 text-xs uppercase tracking-wider bg-bronze-50/90 hover:bg-bronze-100 px-3 py-2 rounded-xl border border-bronze-200/90 transition-all shadow-xs"
+            >
+              <ShieldAlert className="w-4 h-4 text-bronze-600" />
+              <span>Admin Portal</span>
+            </Link>
+          )}
+
           {/* Account Icon / Badge */}
           {isAuthenticated ? (
-            <div className="hidden sm:flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5">
               <Link
                 to="/account"
                 className="flex items-center gap-2 p-2 px-3 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold"
@@ -284,7 +400,7 @@ export function Header() {
               <button
                 onClick={handleLogout}
                 title="Sign Out"
-                className="p-2 text-charcoal-400 hover:text-rose-600 rounded-xl hover:bg-cream-100 transition-colors"
+                className="p-2 text-charcoal-400 hover:text-rose-600 rounded-xl hover:bg-cream-100 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -292,10 +408,11 @@ export function Header() {
           ) : (
             <Link
               to="/login"
-              className="p-2.5 text-charcoal-700 hover:text-charcoal-950 rounded-xl hover:bg-cream-100 transition-colors hidden sm:flex"
+              className="flex items-center gap-2 p-2 px-3.5 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold hidden sm:flex"
               aria-label="User Account"
             >
-              <UserIcon className="w-5 h-5" />
+              <UserIcon className="w-4 h-4 text-bronze-600" />
+              <span>Sign In</span>
             </Link>
           )}
 
@@ -354,8 +471,9 @@ export function Header() {
           </form>
 
           <div className="flex flex-col gap-3">
-            {processedNavItems.map((item) => {
-              const hasChildren = item.children && item.children.length > 0;
+            {navItems.map((item) => {
+              const hasColumns = item.columns && item.columns.length > 0;
+              const hasChildren = (item.children && item.children.length > 0) || hasColumns;
               return (
                 <div key={item.id || item.link} className="space-y-1">
                   <Link
@@ -365,19 +483,49 @@ export function Header() {
                   >
                     {item.label}
                   </Link>
-                  {hasChildren && (
-                    <div className="pl-6 space-y-1 border-l-2 border-amber-500 ml-4">
-                      {item.children!.map((child) => (
-                        <Link
-                          key={child.id || child.link}
-                          to={child.link}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="px-3 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-amber-800 block"
-                        >
-                          • {child.label}
-                        </Link>
+
+                  {hasColumns ? (
+                    <div className="pl-4 space-y-3 border-l-2 border-amber-500 ml-4 my-2">
+                      {item.columns!.map((col, cIdx) => (
+                        <div key={col.id || cIdx} className="space-y-1.5">
+                          <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-900 pt-1">
+                            {col.title}
+                          </h5>
+                          <div className="pl-2 space-y-1">
+                            {col.links.map((sub, sIdx) => (
+                              <Link
+                                key={sub.id || sIdx}
+                                to={sub.link}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="px-2 py-1.5 rounded text-xs font-medium text-slate-600 hover:text-amber-800 flex items-center justify-between"
+                              >
+                                <span>{sub.label}</span>
+                                {sub.badge && (
+                                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-900">
+                                    {sub.badge}
+                                  </span>
+                                )}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
+                  ) : (
+                    hasChildren && (
+                      <div className="pl-6 space-y-1 border-l-2 border-amber-500 ml-4">
+                        {item.children!.map((child) => (
+                          <Link
+                            key={child.id || child.link}
+                            to={child.link}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="px-3 py-2 rounded-lg text-xs font-medium text-slate-700 hover:text-amber-800 block"
+                          >
+                            • {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )
                   )}
                 </div>
               );

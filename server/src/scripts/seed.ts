@@ -1,3 +1,2 @@
-import { runBlackLapelSeed } from './seedBlackLapel.js';
+import './seedNewDepartmentsAndProducts.js';
 
-runBlackLapelSeed();

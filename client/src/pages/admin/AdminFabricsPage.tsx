@@ -130,12 +130,17 @@ export function AdminFabricsPage() {
     setCurrentPage(1);
   }, [search]);
 
-  const filteredFabrics = fabrics.filter(
-    (f) =>
-      f.name.toLowerCase().includes(search.toLowerCase()) ||
-      f.code.toLowerCase().includes(search.toLowerCase()) ||
-      f.composition.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredFabrics = fabrics.filter((f) => {
+    const s = search.toLowerCase().trim();
+    return (
+      !s ||
+      f.name.toLowerCase().includes(s) ||
+      f.code.toLowerCase().includes(s) ||
+      f.composition.toLowerCase().includes(s) ||
+      (f.color && f.color.toLowerCase().includes(s)) ||
+      (f.pattern && f.pattern.toLowerCase().includes(s))
+    );
+  });
 
   const totalPages = Math.ceil(filteredFabrics.length / itemsPerPage) || 1;
   const paginatedFabrics = filteredFabrics.slice(

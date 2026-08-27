@@ -12,3 +12,5 @@ export * from './review.model.js';
 export * from './auditLog.model.js';
 export * from './page.model.js';
 export * from './siteContent.model.js';
+export * from './blog.model.js';
+

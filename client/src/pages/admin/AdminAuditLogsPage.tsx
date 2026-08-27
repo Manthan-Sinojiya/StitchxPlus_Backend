@@ -31,12 +31,18 @@ export function AdminAuditLogsPage() {
     setCurrentPage(1);
   }, [search]);
 
-  const filteredLogs = (logs || []).filter(
-    (log) =>
-      (log.userName || log.userEmail || '').toLowerCase().includes(search.toLowerCase()) ||
-      (log.action || '').toLowerCase().includes(search.toLowerCase()) ||
-      (log.entityType || '').toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredLogs = (logs || []).filter((log) => {
+    const s = search.toLowerCase().trim();
+    if (!s) return true;
+    return (
+      (log.userName && log.userName.toLowerCase().includes(s)) ||
+      (log.userEmail && log.userEmail.toLowerCase().includes(s)) ||
+      (log.action && log.action.toLowerCase().includes(s)) ||
+      (log.entityType && log.entityType.toLowerCase().includes(s)) ||
+      (log.entityId && log.entityId.toLowerCase().includes(s)) ||
+      (log.ipAddress && log.ipAddress.toLowerCase().includes(s))
+    );
+  });
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
   const paginatedLogs = filteredLogs.slice(

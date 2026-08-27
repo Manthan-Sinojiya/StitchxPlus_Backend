@@ -84,6 +84,10 @@ export function ProductDetailPage() {
 
   // Load options when customization mode is activated
   useEffect(() => {
+    if (product && product.isCustomizable === false) {
+      if (isCustomizing) setIsCustomizing(false);
+      return;
+    }
     if (isCustomizing && product) {
       loadCustomizationOptions();
     }
@@ -167,10 +171,15 @@ export function ProductDetailPage() {
   const handleAddToCart = async () => {
     if (!product || !product.inStock) return;
     try {
+      const activeColor = activeColorSwatch?.name || '';
+      const sizeToSave = selectedSize && selectedSize !== 'custom' ? selectedSize : undefined;
+
       const { useCartStore } = await import('../store/useCartStore');
       await useCartStore.getState().addItem({
         productId: product.id || (product as any)._id,
         quantity: 1,
+        selectedColor: activeColor || undefined,
+        selectedSize: sizeToSave,
       });
       toast('success', 'Added to Shopping Bag', `${product.name} added to your bag.`);
     } catch (err: any) {
@@ -335,6 +344,20 @@ export function ProductDetailPage() {
       : 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80';
 
   const displayedPrice = calculatedPrice || product.basePrice;
+  const comparePrice =
+    typeof product.compareAtPrice === 'number' && product.compareAtPrice > product.basePrice
+      ? product.compareAtPrice
+      : (product.isOnSale || product.isSale ? Math.round(product.basePrice * 1.25) : 0);
+
+  const hasDiscount = Boolean(
+    (typeof product.compareAtPrice === 'number' && product.compareAtPrice > product.basePrice) ||
+    product.isOnSale ||
+    product.isSale
+  ) && comparePrice > displayedPrice;
+
+  const discountPercent = hasDiscount && comparePrice > 0
+    ? Math.round(((comparePrice - displayedPrice) / comparePrice) * 100)
+    : 0;
 
   // Total Steps Count (All Option Groups + 1 Final Review Step)
   const totalSteps = customizationGroups.length + 1;
@@ -541,6 +564,11 @@ export function ProductDetailPage() {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="navy">{categoryName}</Badge>
+              {hasDiscount && discountPercent > 0 && (
+                <span className="bg-[#e53935] text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-xs tracking-tight">
+                  -{discountPercent}% OFF
+                </span>
+              )}
               {primaryFabric && <Badge variant="gold">{primaryFabric.name}</Badge>}
               {product.inStock ? (
                 <Badge variant="success">In Stock</Badge>
@@ -555,17 +583,31 @@ export function ProductDetailPage() {
             </h1>
 
             {/* Price & Rating */}
-            <div className="flex flex-wrap items-baseline gap-4 pt-1">
-              <span className="text-3xl font-bold font-serif text-charcoal-950">
-                ${displayedPrice.toLocaleString()}
+            <div className="flex flex-wrap items-baseline gap-3 pt-1">
+              <span className={`text-3xl sm:text-4xl font-bold font-serif ${hasDiscount ? 'text-[#e53935]' : 'text-charcoal-950'}`}>
+                ${displayedPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
+
+              {hasDiscount && comparePrice > 0 && (
+                <span className="text-xl sm:text-2xl text-slate-400 line-through font-normal font-sans">
+                  ${comparePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              )}
+
+              {hasDiscount && discountPercent > 0 && (
+                <span className="bg-[#e53935]/10 text-[#e53935] text-xs font-bold px-2.5 py-1 rounded-full border border-[#e53935]/30">
+                  Save {discountPercent}% (${(comparePrice - displayedPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                </span>
+              )}
+
               {isCalculatingPrice && (
                 <span className="text-xs text-bronze-600 animate-pulse font-sans font-semibold">
                   (updating price...)
                 </span>
               )}
+
               {product.rating > 0 && (
-                <div className="flex items-center gap-1.5 text-xs text-charcoal-700 bg-cream-50 px-3 py-1 rounded-full border border-charcoal-200">
+                <div className="flex items-center gap-1.5 text-xs text-charcoal-700 bg-cream-50 px-3 py-1 rounded-full border border-charcoal-200 ml-auto sm:ml-0">
                   <Star className="w-4 h-4 text-bronze-500 fill-bronze-400" />
                   <span className="font-bold text-charcoal-950">{product.rating.toFixed(1)}</span>
                   <span>({product.numReviews} bespoke reviews)</span>
@@ -1014,7 +1056,11 @@ export function ProductDetailPage() {
                           }`}
                         >
                           <span
-                            className="w-4 h-4 rounded-full border border-black/20 shadow-xs flex-shrink-0"
+                            className={`w-4 h-4 rounded-full flex-shrink-0 shadow-xs transition-all ${
+                              selectedColorIndex === idx
+                                ? 'border-2 border-white ring-2 ring-gold-400/50'
+                                : 'border border-black/20'
+                            }`}
                             style={{ backgroundColor: col.hex }}
                           />
                           <span className="text-xs font-bold capitalize">{col.name}</span>
@@ -1035,35 +1081,45 @@ export function ProductDetailPage() {
                         onChange={(e) => setSelectedSize(e.target.value)}
                         className="w-full px-4 py-3 rounded-2xl border border-charcoal-200 text-sm focus:outline-none focus:ring-2 focus:ring-bronze-500 bg-white"
                       >
-                        <option value="custom">Use My Digital Fit Profile (Recommended)</option>
-                        <option value="38r">38 Regular (US/UK)</option>
-                        <option value="40r">40 Regular (US/UK)</option>
-                        <option value="42r">42 Regular (US/UK)</option>
-                        <option value="44r">44 Regular (US/UK)</option>
-                        <option value="46r">46 Regular (US/UK)</option>
+                        {product.isCustomizable !== false && (
+                          <option value="custom">Use My Digital Fit Profile (Recommended)</option>
+                        )}
+                        {(Array.isArray(product.sizes) && product.sizes.length > 0
+                          ? product.sizes
+                          : ['S', 'M', 'L', 'XL', '38R', '40R', '42R', '44R']
+                        ).map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className={`grid gap-3 pt-2 ${product.isCustomizable === true ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                       <Button
-                        variant="accent"
+                        variant={product.isCustomizable === true ? 'accent' : 'primary'}
                         size="lg"
+                        fullWidth
                         onClick={handleAddToCart}
                         leftIcon={<ShoppingBag className="w-5 h-5" />}
+                        className="w-full"
                       >
                         Add to Bag
                       </Button>
 
                       {/* Customize Button opens In-Page Step-by-Step Customization Mode */}
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        fullWidth
-                        onClick={() => handleToggleCustomizeMode(true)}
-                        leftIcon={<Sparkles className="w-5 h-5 text-bronze-400" />}
-                      >
-                        Customize This Suit
-                      </Button>
+                      {product.isCustomizable === true && (
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          fullWidth
+                          onClick={() => handleToggleCustomizeMode(true)}
+                          leftIcon={<Sparkles className="w-5 h-5 text-bronze-400" />}
+                          className="w-full"
+                        >
+                          Customize This Suit
+                        </Button>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -1103,17 +1159,19 @@ export function ProductDetailPage() {
                       </div>
                     )}
 
-                    <div className="pt-2">
-                      <Button
-                        variant="accent"
-                        size="lg"
-                        fullWidth
-                        onClick={() => handleToggleCustomizeMode(true)}
-                        leftIcon={<Scissors className="w-5 h-5" />}
-                      >
-                        Customize from Raw Fabric Studio
-                      </Button>
-                    </div>
+                    {product.isCustomizable === true && (
+                      <div className="pt-2">
+                        <Button
+                          variant="accent"
+                          size="lg"
+                          fullWidth
+                          onClick={() => handleToggleCustomizeMode(true)}
+                          leftIcon={<Scissors className="w-5 h-5" />}
+                        >
+                          Customize from Raw Fabric Studio
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

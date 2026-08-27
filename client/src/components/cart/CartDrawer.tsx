@@ -108,11 +108,28 @@ export const CartDrawer: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Customization & Pattern Badges */}
+                    {/* Customization & Variant Badges */}
                     {optionsSummary && (
                       <p className="text-xs text-amber-700 font-medium flex items-center gap-1">
                         <Sparkles className="w-3 h-3 flex-shrink-0" />
                         <span className="truncate">{optionsSummary}</span>
+                      </p>
+                    )}
+
+                    {(item.selectedColor || item.selectedSize) && (
+                      <p className="text-xs text-slate-600 font-medium">
+                        {item.selectedColor && (
+                          <span>
+                            Color:{' '}
+                            <strong className="text-slate-800">
+                              {typeof item.selectedColor === 'string'
+                                ? item.selectedColor
+                                : item.selectedColor?.name}
+                            </strong>
+                          </span>
+                        )}
+                        {item.selectedColor && item.selectedSize && <span> • </span>}
+                        {item.selectedSize && <span>Size: <strong className="text-slate-800">{item.selectedSize}</strong></span>}
                       </p>
                     )}
 

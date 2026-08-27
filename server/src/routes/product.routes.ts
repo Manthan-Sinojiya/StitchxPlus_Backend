@@ -14,11 +14,11 @@ import { cacheControl } from '../middlewares/cacheControl.middleware.js';
 
 const router = Router();
 
-// Public routes with Cache-Control headers
-router.get('/', cacheControl(300), getProducts);
-router.get('/:id/related', cacheControl(300), getRelatedProducts);
-router.get('/:id/customization', cacheControl(300), getProductCustomization);
-router.get('/:slug', cacheControl(300), getProductBySlug);
+// Public routes (no-cache so admin catalog changes reflect immediately)
+router.get('/', cacheControl(0), getProducts);
+router.get('/:id/related', cacheControl(0), getRelatedProducts);
+router.get('/:id/customization', cacheControl(0), getProductCustomization);
+router.get('/:slug', cacheControl(0), getProductBySlug);
 
 // Admin-only routes
 router.post('/', authenticate, authorize('ADMIN'), createProduct);

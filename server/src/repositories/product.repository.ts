@@ -2,7 +2,7 @@ import { FilterQuery } from 'mongoose';
 import { BaseRepository } from './base.repository.js';
 import { ProductModel, IProductDocument } from '../models/product.model.js';
 import { CategoryModel } from '../models/category.model.js';
-import '../models/fabric.model.js';
+import { FabricModel } from '../models/fabric.model.js';
 
 export interface ProductQueryFilter {
   category?: string;
@@ -11,7 +11,7 @@ export interface ProductQueryFilter {
   priceMin?: number;
   priceMax?: number;
   search?: string;
-  sort?: 'newest' | 'price_asc' | 'price_desc' | 'rating';
+  sort?: string;
   page?: number;
   limit?: number;
 }
@@ -71,17 +71,28 @@ export class ProductRepository extends BaseRepository<IProductDocument> {
 
     const mongoFilter: FilterQuery<IProductDocument> = {};
 
-    // Filter by Category (can be ObjectId or Category slug)
+    // Filter by Category (can be ObjectId or Category slug, including top-level department expansion)
     if (queryParams.category) {
+      let targetCatId: any = null;
       if (queryParams.category.match(/^[0-9a-fA-F]{24}$/)) {
-        mongoFilter.category = queryParams.category;
+        targetCatId = queryParams.category;
       } else {
         const cat = await CategoryModel.findOne({ slug: queryParams.category.toLowerCase() });
         if (cat) {
-          mongoFilter.category = cat._id;
-        } else {
-          mongoFilter.category = null;
+          targetCatId = cat._id;
         }
+      }
+
+      if (targetCatId) {
+        const childCats = await CategoryModel.find({ parentCategory: targetCatId }).select('_id');
+        if (childCats.length > 0) {
+          const catIds = [targetCatId, ...childCats.map((c) => c._id)];
+          mongoFilter.category = { $in: catIds };
+        } else {
+          mongoFilter.category = targetCatId;
+        }
+      } else {
+        mongoFilter.category = null;
       }
     }
 
@@ -106,22 +117,45 @@ export class ProductRepository extends BaseRepository<IProductDocument> {
       }
     }
 
-    // Search query matching name, description, tags, or sku
+    // Search query matching name, description, tags, sku, category names, or fabric names
     if (queryParams.search && queryParams.search.trim()) {
       const term = queryParams.search.trim();
       const regex = new RegExp(term, 'i');
-      mongoFilter.$or = [{ name: regex }, { description: regex }, { tags: { $in: [regex] } }, { sku: regex }];
+
+      const [matchingCats, matchingFabrics] = await Promise.all([
+        CategoryModel.find({ name: regex }).select('_id').exec(),
+        FabricModel.find({ name: regex }).select('_id').exec(),
+      ]);
+
+      const catIds = matchingCats.map((c) => c._id);
+      const fabricIds = matchingFabrics.map((f) => f._id);
+
+      const searchOrConditions: FilterQuery<IProductDocument>[] = [
+        { name: regex },
+        { description: regex },
+        { tags: { $in: [regex] } },
+        { sku: regex },
+      ];
+
+      if (catIds.length > 0) {
+        searchOrConditions.push({ category: { $in: catIds } });
+      }
+      if (fabricIds.length > 0) {
+        searchOrConditions.push({ availableFabrics: { $in: fabricIds } });
+      }
+
+      mongoFilter.$or = searchOrConditions;
     }
 
     // Sorting
     let sortOptions: Record<string, 1 | -1> = { createdAt: -1 };
-    if (queryParams.sort === 'price_asc') {
+    if (queryParams.sort === 'price_asc' || queryParams.sort === 'price') {
       sortOptions = { basePrice: 1 };
-    } else if (queryParams.sort === 'price_desc') {
+    } else if (queryParams.sort === 'price_desc' || queryParams.sort === '-price') {
       sortOptions = { basePrice: -1 };
     } else if (queryParams.sort === 'rating') {
       sortOptions = { rating: -1, numReviews: -1 };
-    } else if (queryParams.sort === 'newest') {
+    } else if (queryParams.sort === 'newest' || queryParams.sort === '-createdAt') {
       sortOptions = { createdAt: -1 };
     }
 

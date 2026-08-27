@@ -28,9 +28,6 @@ export function AdminCustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
-  }, []);
-
-  useEffect(() => {
     setCurrentPage(1);
   }, [search]);
 

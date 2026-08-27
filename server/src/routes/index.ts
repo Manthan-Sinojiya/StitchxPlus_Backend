@@ -13,6 +13,7 @@ import orderRoutes from './order.routes.js';
 import adminRoutes from './admin.routes.js';
 import contentRoutes from './content.routes.js';
 import adminContentRoutes from './adminContent.routes.js';
+import blogRoutes from './blog.routes.js';
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.use('/cart', cartRoutes);
 router.use('/checkout', checkoutRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/orders', orderRoutes);
+router.use('/blogs', blogRoutes);
 router.use('/admin/content', adminContentRoutes);
 router.use('/admin', adminRoutes);
 router.use('/', contentRoutes);
@@ -43,11 +45,13 @@ v1Router.use('/cart', cartRoutes);
 v1Router.use('/checkout', checkoutRoutes);
 v1Router.use('/payments', paymentRoutes);
 v1Router.use('/orders', orderRoutes);
+v1Router.use('/blogs', blogRoutes);
 v1Router.use('/admin/content', adminContentRoutes);
 v1Router.use('/admin', adminRoutes);
 v1Router.use('/health', healthRoutes);
 v1Router.use('/', contentRoutes);
 
 router.use('/v1', v1Router);
+
 
 export default router;

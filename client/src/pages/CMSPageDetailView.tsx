@@ -84,34 +84,42 @@ export function CMSPageDetailView() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-12">
+    <div className="max-w-5xl mx-auto space-y-8">
       <SEOHead
         title={page.seo?.title || `${page.title} | Stitchx Plus`}
         description={page.seo?.description || `Read ${page.title} at Stitchx Plus Bespoke Atelier.`}
       />
 
-      <Link
-        to="/"
-        className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-navy-600 hover:text-gold-600 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to Home
-      </Link>
+      {/* Header & Breadcrumbs */}
+      <div className="space-y-4 border-b border-charcoal-200/70 pb-6">
+        <nav className="text-xs font-semibold text-charcoal-500 uppercase tracking-wider flex items-center gap-2">
+          <Link to="/" className="hover:text-bronze-600 transition-colors">
+            Home
+          </Link>
+          <span>/</span>
+          <span className="text-charcoal-950 font-bold">Publication</span>
+          <span>/</span>
+          <span className="text-bronze-700 font-bold truncate max-w-[250px]">{page.title}</span>
+        </nav>
 
-      <div className="space-y-4 border-b border-navy-100 pb-6">
-        <Badge variant="gold">Bespoke Publication</Badge>
-        <h1 className="text-4xl sm:text-5xl font-bold font-heading text-navy-950 tracking-tight">
-          {page.title}
-        </h1>
-        {page.updatedAt && (
-          <div className="flex items-center gap-2 text-xs text-navy-500 font-mono">
-            <Clock className="w-3.5 h-3.5" />
-            <span>Updated {new Date(page.updatedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-          </div>
-        )}
+        <div className="space-y-3 pt-2">
+          <Badge variant="gold" size="sm" className="px-3 py-1">
+            Bespoke Publication
+          </Badge>
+          <h1 className="text-4xl sm:text-5xl font-bold font-serif text-charcoal-950 tracking-tight">
+            {page.title}
+          </h1>
+          {page.updatedAt && (
+            <div className="flex items-center gap-2 text-xs text-charcoal-500 font-mono">
+              <Clock className="w-3.5 h-3.5 text-bronze-600" />
+              <span>Updated {new Date(page.updatedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div
-        className="prose prose-navy max-w-none text-navy-800 leading-relaxed text-base space-y-4 font-sans bg-white p-8 rounded-3xl border border-charcoal-200/80 shadow-xs"
+        className="article-body font-sans bg-white p-8 sm:p-12 rounded-3xl border border-charcoal-200/80 shadow-xs"
         dangerouslySetInnerHTML={{ __html: page.body }}
       />
 

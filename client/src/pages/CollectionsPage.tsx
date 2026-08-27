@@ -91,16 +91,21 @@ export function CollectionsPage() {
     setSearchParams(newParams);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
     setCurrentPage(1);
     const newParams = new URLSearchParams(searchParams);
-    if (searchQuery.trim()) {
-      newParams.set('search', searchQuery.trim());
+    if (val.trim()) {
+      newParams.set('search', val.trim());
     } else {
       newParams.delete('search');
     }
-    setSearchParams(newParams);
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSearchChange(searchQuery);
   };
 
   const clearFilters = () => {
@@ -162,19 +167,14 @@ export function CollectionsPage() {
               <Input
                 placeholder="Search tuxedos, suits, fabrics, tags..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9 pr-8"
               />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    const p = new URLSearchParams(searchParams);
-                    p.delete('search');
-                    setSearchParams(p);
-                  }}
-                  className="absolute right-3 top-3.5 text-charcoal-400 hover:text-charcoal-700"
+                  onClick={() => handleSearchChange('')}
+                  className="absolute right-3 top-3.5 text-charcoal-400 hover:text-charcoal-700 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>

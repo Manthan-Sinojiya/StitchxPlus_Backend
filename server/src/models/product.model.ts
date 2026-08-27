@@ -20,7 +20,8 @@ export interface IProductDocument extends Document {
   customizationRules?: Array<{ groupCode: string; allowedOptionCodes?: string[] }>;
   fitType?: string;
   isCustomizable?: boolean;
-  simpleVariants?: Array<{ name: string; sku?: string; stockQuantity?: number }>;
+  sizes?: string[];
+  simpleVariants?: Array<{ name?: string; colorName?: string; sizeName?: string; sku?: string; stockQuantity?: number; inStock?: boolean }>;
   colors?: any[];
   tags?: string[];
   inStock: boolean;
@@ -73,11 +74,15 @@ const productSchema = new Schema(
     ],
     fitType: { type: String, trim: true, default: 'Tailored Fit' },
     isCustomizable: { type: Boolean, default: true },
+    sizes: [{ type: String, trim: true }],
     simpleVariants: [
       {
-        name: { type: String, required: true },
+        name: { type: String },
+        colorName: { type: String },
+        sizeName: { type: String },
         sku: { type: String },
         stockQuantity: { type: Number, default: 0 },
+        inStock: { type: Boolean, default: true },
       },
     ],
     colors: [{ type: Schema.Types.Mixed }],

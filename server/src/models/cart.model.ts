@@ -34,6 +34,8 @@ export interface ICartItem {
   productId: Types.ObjectId;
   quantity: number;
   priceAtAddition: number;
+  selectedColor?: { name: string; hex?: string };
+  selectedSize?: string;
   customization?: ICartItemCustomization;
   measurementProfile?: ICartItemMeasurementProfile;
 }
@@ -52,6 +54,8 @@ const cartItemSchema = new Schema<ICartItem>(
     productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
     quantity: { type: Number, required: true, min: 1, default: 1 },
     priceAtAddition: { type: Number, required: true },
+    selectedColor: { name: { type: String }, hex: { type: String } },
+    selectedSize: { type: String },
     customization: { type: Schema.Types.Mixed },
     measurementProfile: { type: Schema.Types.Mixed },
   },

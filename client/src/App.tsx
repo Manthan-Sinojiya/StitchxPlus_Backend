@@ -45,6 +45,12 @@ const AccountPage = lazy(() =>
 const CMSPageDetailView = lazy(() =>
   import('./pages/CMSPageDetailView').then((m) => ({ default: m.CMSPageDetailView })),
 );
+const BlogPage = lazy(() =>
+  import('./pages/BlogPage').then((m) => ({ default: m.BlogPage })),
+);
+const BlogDetailPage = lazy(() =>
+  import('./pages/BlogDetailPage').then((m) => ({ default: m.BlogDetailPage })),
+);
 const NotFoundPage = lazy(() =>
   import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })),
 );
@@ -82,6 +88,9 @@ const AdminCouponsPage = lazy(() =>
 );
 const AdminContentPage = lazy(() =>
   import('./pages/admin/AdminContentPage').then((m) => ({ default: m.AdminContentPage })),
+);
+const AdminBlogsPage = lazy(() =>
+  import('./pages/admin/AdminBlogsPage').then((m) => ({ default: m.AdminBlogsPage })),
 );
 const AdminAuditLogsPage = lazy(() =>
   import('./pages/admin/AdminAuditLogsPage').then((m) => ({ default: m.AdminAuditLogsPage })),
@@ -130,6 +139,8 @@ function AppRoutes() {
           <Route path="register" element={<RegisterPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />
+          <Route path="blog" element={<BlogPage />} />
+          <Route path="blog/:slug" element={<BlogDetailPage />} />
           <Route path="page/:slug" element={<CMSPageDetailView />} />
           <Route
             path="account"
@@ -158,6 +169,7 @@ function AppRoutes() {
                   <Route path="customers" element={<AdminCustomersPage />} />
                   <Route path="coupons" element={<AdminCouponsPage />} />
                   <Route path="content" element={<AdminContentPage />} />
+                  <Route path="blogs" element={<AdminBlogsPage />} />
                   <Route path="audit-logs" element={<AdminAuditLogsPage />} />
                   <Route path="*" element={<AdminDashboardPage />} />
                 </Routes>

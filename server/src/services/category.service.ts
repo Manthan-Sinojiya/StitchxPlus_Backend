@@ -6,8 +6,45 @@ import { AppError } from '../utils/appError.js';
 export class CategoryService {
   constructor(private categoryRepository: CategoryRepository = new CategoryRepository()) {}
 
-  public async getAllCategories(): Promise<ICategoryDocument[]> {
-    return this.categoryRepository.find({ isActive: true });
+  public async getAllCategories(includeInactive = false): Promise<any[]> {
+    const filter = includeInactive ? {} : { isActive: true };
+    const categories = await this.categoryRepository.findAllWithParent(filter);
+
+    // Aggregate direct product counts per category from database
+    const productCounts = await ProductModel.aggregate([
+      { $group: { _id: '$category', count: { $sum: 1 } } },
+    ]);
+
+    const countMap = new Map<string, number>();
+    productCounts.forEach((item) => {
+      if (item._id) {
+        countMap.set(String(item._id), item.count);
+      }
+    });
+
+    const categoryPlainList = categories.map((cat) => {
+      const doc = (cat as any).toObject ? (cat as any).toObject() : { ...cat };
+      const catId = String(doc._id || doc.id);
+      doc.productCount = countMap.get(catId) || 0;
+      return doc;
+    });
+
+    // Aggregate subcategory counts into top-level departments
+    categoryPlainList.forEach((dept) => {
+      if (!dept.parentCategory || dept.isTopLevel || dept.type === 'department') {
+        const deptId = String(dept._id || dept.id);
+        const subCats = categoryPlainList.filter((sub) => {
+          const p = sub.parentCategory;
+          const pId = typeof p === 'object' && p ? String(p._id || p.id) : String(p || '');
+          return pId === deptId;
+        });
+
+        const subCount = subCats.reduce((acc, curr) => acc + (curr.productCount || 0), 0);
+        dept.productCount = (dept.productCount || 0) + subCount;
+      }
+    });
+
+    return categoryPlainList;
   }
 
   public async getCategoryBySlug(slug: string): Promise<ICategoryDocument> {

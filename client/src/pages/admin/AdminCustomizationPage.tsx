@@ -349,11 +349,16 @@ export function AdminCustomizationPage() {
     setCurrentPage(1);
   }, [search]);
 
-  const filteredGroups = (groups || []).filter(
-    (grp) =>
-      grp.group?.toLowerCase().includes(search.toLowerCase()) ||
-      grp.groupCode?.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredGroups = (groups || []).filter((grp) => {
+    const s = search.toLowerCase().trim();
+    return (
+      !s ||
+      grp.group?.toLowerCase().includes(s) ||
+      grp.groupCode?.toLowerCase().includes(s) ||
+      grp.category?.toLowerCase().includes(s) ||
+      (grp.options && grp.options.some((opt: any) => opt.label?.toLowerCase().includes(s)))
+    );
+  });
 
   const totalPages = Math.ceil(filteredGroups.length / itemsPerPage) || 1;
   const paginatedGroups = filteredGroups.slice(

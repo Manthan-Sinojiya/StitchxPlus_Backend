@@ -392,9 +392,31 @@ export class AdminService {
     if (params.category && params.category !== 'all') {
       filter.category = params.category;
     }
-    if (params.search) {
-      const searchRegex = new RegExp(params.search, 'i');
-      filter.$or = [{ name: searchRegex }, { sku: searchRegex }, { slug: searchRegex }];
+    if (params.search && params.search.trim()) {
+      const searchRegex = new RegExp(params.search.trim(), 'i');
+      const [matchingCats, matchingFabrics] = await Promise.all([
+        CategoryModel.find({ name: searchRegex }).select('_id').exec(),
+        FabricModel.find({ name: searchRegex }).select('_id').exec(),
+      ]);
+
+      const catIds = matchingCats.map((c) => c._id);
+      const fabricIds = matchingFabrics.map((f) => f._id);
+
+      const searchConditions: Record<string, any>[] = [
+        { name: searchRegex },
+        { sku: searchRegex },
+        { slug: searchRegex },
+        { description: searchRegex },
+      ];
+
+      if (catIds.length > 0) {
+        searchConditions.push({ category: { $in: catIds } });
+      }
+      if (fabricIds.length > 0) {
+        searchConditions.push({ fabricRef: { $in: fabricIds } }, { availableFabrics: { $in: fabricIds } });
+      }
+
+      filter.$or = searchConditions;
     }
 
     const total = await ProductModel.countDocuments(filter);

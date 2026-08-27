@@ -11,3 +11,5 @@ export * from './Toast';
 export * from './Skeleton';
 export * from './Pagination';
 export * from './ImageUploader';
+export * from './RichTextEditor';
+

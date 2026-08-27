@@ -118,9 +118,14 @@ export function AdminCouponsPage() {
     setCurrentPage(1);
   }, [search]);
 
-  const filteredCoupons = (coupons || []).filter((c) =>
-    c.code.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredCoupons = (coupons || []).filter((c) => {
+    const s = search.toLowerCase().trim();
+    return (
+      !s ||
+      c.code.toLowerCase().includes(s) ||
+      (c.discountType && c.discountType.toLowerCase().includes(s))
+    );
+  });
 
   const totalPages = Math.ceil(filteredCoupons.length / itemsPerPage) || 1;
   const paginatedCoupons = filteredCoupons.slice(

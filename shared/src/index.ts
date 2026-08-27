@@ -46,6 +46,8 @@ export interface Category {
   description?: string;
   image?: string;
   parentCategory?: Category | string | null;
+  isTopLevel?: boolean;
+  type?: 'department' | 'category';
   sortOrder?: number;
   seo?: CategorySEO;
   isActive: boolean;
@@ -77,6 +79,7 @@ export interface ProductImage {
   url: string;
   altText?: string;
   isPrimary?: boolean;
+  isHover?: boolean;
 }
 
 export interface ColorVariant {
@@ -88,8 +91,11 @@ export interface ColorVariant {
 
 export interface SimpleVariant {
   name: string;
+  colorName?: string;
+  sizeName?: string;
   sku?: string;
   stockQuantity?: number;
+  inStock?: boolean;
 }
 
 export interface ProductSEO {
@@ -135,6 +141,7 @@ export interface Product {
   customizationRules?: ProductCustomizationRule[];
   fitType?: string;
   isCustomizable?: boolean;
+  sizes?: string[];
   simpleVariants?: SimpleVariant[];
   colors?: Array<string | ColorVariant>;
   tags?: string[];
@@ -165,6 +172,42 @@ export interface CustomSection {
   description?: string;
   badgeColor?: string;
   isActive: boolean;
+  sortOrder?: number;
+  isBuiltin?: boolean;
+}
+
+export interface HomeLayoutSection {
+  id: string;
+  type: 'hero' | 'showcase_tabs' | 'categories' | 'custom_promo' | 'faq' | 'testimonials' | 'newsletter' | 'custom_html';
+  title: string;
+  subtitle?: string;
+  isActive: boolean;
+  sortOrder: number;
+  bannerImage?: string;
+  bannerAlt?: string;
+  heading?: string;
+  subtext?: string;
+  ctaText?: string;
+  ctaLink?: string;
+  customHtml?: string;
+}
+
+export interface BlogPost {
+  id: string;
+  _id?: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  content: string;
+  image?: string;
+  author?: string;
+  category?: string;
+  tags?: string[];
+  readTime?: string;
+  isPublished: boolean;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PaginationMeta {
@@ -330,6 +373,8 @@ export interface CartItem {
   priceAtAddition: number;
   unitPrice: number;
   totalPrice: number;
+  selectedColor?: string | { name: string; hex?: string };
+  selectedSize?: string;
   customization?: CustomizationSnapshot;
   measurementProfile?: MeasurementProfileSnapshot;
 }
@@ -352,12 +397,16 @@ export interface Cart {
 export interface AddCartItemInput {
   productId: string;
   quantity: number;
+  selectedColor?: string | { name: string; hex?: string };
+  selectedSize?: string;
   customization?: CustomizationSnapshot;
   measurementProfile?: MeasurementProfileSnapshot;
 }
 
 export interface UpdateCartItemInput {
   quantity: number;
+  selectedColor?: string | { name: string; hex?: string };
+  selectedSize?: string;
   customization?: CustomizationSnapshot;
   measurementProfile?: MeasurementProfileSnapshot;
 }
@@ -389,6 +438,8 @@ export interface OrderItemSnapshot {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  selectedColor?: { name: string; hex?: string };
+  selectedSize?: string;
   customization?: CustomizationSnapshot;
   measurementProfile?: MeasurementProfileSnapshot;
 }

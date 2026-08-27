@@ -6,6 +6,8 @@ export interface ICategoryDocument extends Document {
   description?: string;
   image?: string;
   parentCategory?: Types.ObjectId;
+  isTopLevel?: boolean;
+  type?: 'department' | 'category';
   sortOrder?: number;
   seo?: {
     metaTitle?: string;
@@ -22,7 +24,9 @@ const categorySchema = new Schema<ICategoryDocument>(
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
     description: { type: String, trim: true },
     image: { type: String },
-    parentCategory: { type: Schema.Types.ObjectId, ref: 'Category', default: null },
+    parentCategory: { type: Schema.Types.ObjectId, ref: 'Category', default: null, index: true },
+    isTopLevel: { type: Boolean, default: false, index: true },
+    type: { type: String, enum: ['department', 'category'], default: 'category', index: true },
     sortOrder: { type: Number, default: 0 },
     seo: {
       metaTitle: { type: String, trim: true },

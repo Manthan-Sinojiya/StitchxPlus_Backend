@@ -4,9 +4,10 @@ import { sendSuccess } from '../utils/response.js';
 
 const categoryService = new CategoryService();
 
-export async function getCategories(_req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getCategories(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const categories = await categoryService.getAllCategories();
+    const includeInactive = req.query.includeInactive === 'true';
+    const categories = await categoryService.getAllCategories(includeInactive);
     sendSuccess(res, categories, 'Categories retrieved successfully');
   } catch (error) {
     next(error);

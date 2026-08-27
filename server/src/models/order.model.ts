@@ -27,6 +27,8 @@ export interface IOrderItemSnapshot {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  selectedColor?: { name: string; hex?: string };
+  selectedSize?: string;
   customization?: Record<string, any>;
   measurementProfile?: Record<string, any>;
 }
@@ -83,6 +85,8 @@ const orderItemSnapshotSchema = new Schema<IOrderItemSnapshot>(
     quantity: { type: Number, required: true, min: 1 },
     unitPrice: { type: Number, required: true },
     totalPrice: { type: Number, required: true },
+    selectedColor: { name: { type: String }, hex: { type: String } },
+    selectedSize: { type: String },
     customization: { type: Schema.Types.Mixed },
     measurementProfile: { type: Schema.Types.Mixed },
   },

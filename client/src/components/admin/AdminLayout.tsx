@@ -16,6 +16,7 @@ import {
   Scissors,
   ChevronRight,
   Sparkles,
+  BookOpen,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { authService } from '../../services/authService';
@@ -38,6 +39,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { label: 'Orders', path: '/admin/orders', icon: ClipboardList },
     { label: 'Customers', path: '/admin/customers', icon: Users },
     { label: 'Coupons', path: '/admin/coupons', icon: Ticket },
+    { label: 'Journal & Blogs', path: '/admin/blogs', icon: BookOpen },
     { label: 'Site Content (CMS)', path: '/admin/content', icon: FileText },
     { label: 'Audit Logs', path: '/admin/audit-logs', icon: ShieldCheck },
   ];
@@ -91,17 +93,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${
-                      isActive
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all ${isActive
                         ? 'bg-slate-900 text-white font-semibold shadow-xs'
                         : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <Icon
-                        className={`w-4 h-4 ${
-                          isActive ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'
-                        }`}
+                        className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-slate-400 group-hover:text-slate-600'
+                          }`}
                       />
                       <span>{item.label}</span>
                     </div>
@@ -154,7 +154,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 bg-slate-50/70 overflow-y-auto">
         {/* Top Header Bar */}
-        <header className="h-16 border-b border-slate-200/80 px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+        <header className="h-16 border-b border-slate-200/80 px-[8px] flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-full">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -177,7 +177,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Dynamic Page Content Container */}
-        <div className="p-8 max-w-7xl w-full mx-auto space-y-8">{children}</div>
+        <div className="py-8 px-[8px] max-w-7xl w-full mx-auto space-y-8">{children}</div>
       </main>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Edit2, Trash2, Folder, Check, X, ArrowUpDown, ArrowLeft, Save, Globe, Sparkles } from 'lucide-react';
-import { Button, Input, Select, ImageUploader, useToast, Loader, Pagination } from '../../components/ui';
+import { Button, Input, Select, ImageUploader, useToast, Loader, Pagination, RichTextEditor } from '../../components/ui';
 import { adminService } from '../../services/adminService';
 import { Category } from '@stitchx/shared';
 
@@ -22,6 +22,8 @@ export function AdminCategoriesPage() {
     image: '',
     imageAlt: '',
     parentCategory: '',
+    isTopLevel: false,
+    type: 'category' as 'department' | 'category',
     sortOrder: 0,
     isActive: true,
     seo: {
@@ -47,15 +49,17 @@ export function AdminCategoriesPage() {
     fetchCategories();
   }, []);
 
-  const openAddEditor = () => {
+  const openAddEditor = (isDept = false) => {
     setEditingCategory(null);
     setFormData({
       name: '',
       slug: '',
       description: '',
       image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80',
-      imageAlt: 'Custom Bespoke Suit Category Banner',
+      imageAlt: isDept ? 'Department Hero Banner' : 'Category Banner',
       parentCategory: '',
+      isTopLevel: isDept,
+      type: isDept ? 'department' : 'category',
       sortOrder: categories.length + 1,
       isActive: true,
       seo: {
@@ -81,6 +85,8 @@ export function AdminCategoriesPage() {
       image: cat.image || '',
       imageAlt: (cat as any).imageAlt || cat.name || '',
       parentCategory: parentId,
+      isTopLevel: !!cat.isTopLevel || cat.type === 'department',
+      type: (cat.type as any) || (cat.isTopLevel ? 'department' : 'category'),
       sortOrder: cat.sortOrder || 0,
       isActive: cat.isActive ?? true,
       seo: {
@@ -95,15 +101,18 @@ export function AdminCategoriesPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      toast('error', 'Validation Error', 'Category name is required.');
+      toast('error', 'Validation Error', 'Category or Department name is required.');
       return;
     }
 
     try {
       setSubmitting(true);
+      const isDept = formData.isTopLevel;
       const payload = {
         ...formData,
-        parentCategory: formData.parentCategory || null,
+        isTopLevel: isDept,
+        type: isDept ? 'department' : 'category',
+        parentCategory: isDept ? null : (formData.parentCategory || null),
         slug:
           formData.slug ||
           formData.name
@@ -115,10 +124,10 @@ export function AdminCategoriesPage() {
       if (editingCategory) {
         const id = editingCategory.id || (editingCategory as any)._id;
         await adminService.updateCategory(id, payload);
-        toast('success', 'Category Updated', `"${formData.name}" updated successfully.`);
+        toast('success', 'Taxonomy Saved', `"${formData.name}" updated successfully.`);
       } else {
         await adminService.createCategory(payload);
-        toast('success', 'Category Created', `"${formData.name}" created successfully.`);
+        toast('success', 'Taxonomy Created', `"${formData.name}" created successfully.`);
       }
       window.dispatchEvent(new CustomEvent('cms-nav-updated'));
       setViewMode('list');
@@ -149,11 +158,15 @@ export function AdminCategoriesPage() {
     setCurrentPage(1);
   }, [search]);
 
-  const filteredCategories = categories.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.slug.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredCategories = categories.filter((c) => {
+    const s = search.toLowerCase().trim();
+    return (
+      !s ||
+      c.name.toLowerCase().includes(s) ||
+      c.slug.toLowerCase().includes(s) ||
+      (c.description && c.description.toLowerCase().includes(s))
+    );
+  });
 
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage) || 1;
   const paginatedCategories = filteredCategories.slice(
@@ -222,18 +235,47 @@ export function AdminCategoriesPage() {
             />
           </div>
 
+          {/* Department vs Category Selection Toggle */}
+          <div className="p-4 bg-amber-50/50 border border-amber-200/80 rounded-2xl space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isTopLevel}
+                onChange={(e) => {
+                  const isDept = e.target.checked;
+                  setFormData({
+                    ...formData,
+                    isTopLevel: isDept,
+                    type: isDept ? 'department' : 'category',
+                    parentCategory: isDept ? '' : formData.parentCategory,
+                  });
+                }}
+                className="w-5 h-5 text-amber-600 rounded"
+              />
+              <div>
+                <span className="font-bold text-xs text-slate-900 block">
+                  Is Top-Level Department (e.g. Men, Women, Accessories)
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Top-level departments sit at the highest level of storefront navigation above categories.
+                </span>
+              </div>
+            </label>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Select
-              label="Parent Category (Taxonomy Hierarchy)"
+              label={formData.isTopLevel ? 'Parent Entity (N/A for Top-Level Department)' : 'Parent Department / Category (Taxonomy Hierarchy)'}
               value={formData.parentCategory}
+              disabled={formData.isTopLevel}
               onChange={(e) => setFormData({ ...formData, parentCategory: e.target.value })}
               options={[
-                { value: '', label: 'Root Category (No Parent)' },
+                { value: '', label: '-- None (Root level) --' },
                 ...categories
                   .filter((c) => (c.id || (c as any)._id) !== (editingCategory?.id || (editingCategory as any)?._id))
                   .map((c) => ({
                     value: c.id || (c as any)._id,
-                    label: c.name,
+                    label: `${c.isTopLevel ? '[Department] ' : ''}${c.name}`,
                   })),
               ]}
             />
@@ -246,18 +288,13 @@ export function AdminCategoriesPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Category Description (Storefront Highlight)
-            </label>
-            <textarea
-              rows={4}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe the suit category, occasions, fit profiles, and fabrics..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
-            />
-          </div>
+          <RichTextEditor
+            label="Category Description (Storefront Highlight)"
+            value={formData.description}
+            onChange={(val) => setFormData({ ...formData, description: val })}
+            placeholder="Describe the suit category, occasions, fit profiles, and fabrics..."
+            minHeight="180px"
+          />
 
           {/* Cloudinary & Image Upload with Alt Text */}
           <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200/90 space-y-4">
@@ -347,12 +384,20 @@ export function AdminCategoriesPage() {
             Organize suit and accessory hierarchy with subcategories, ordering, and deletion safety.
           </p>
         </div>
-        <button
-          onClick={openAddEditor}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-bold shadow-xs transition-all flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Create New Category
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => openAddEditor(true)}
+            className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-950 text-amber-400 text-xs font-bold shadow-xs transition-all flex items-center gap-2 border border-slate-800"
+          >
+            <Plus className="w-4 h-4" /> Create Department
+          </button>
+          <button
+            onClick={() => openAddEditor(false)}
+            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 text-xs font-bold shadow-xs transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Create Category
+          </button>
+        </div>
       </div>
 
       {/* Filter / Search Bar */}
@@ -361,7 +406,7 @@ export function AdminCategoriesPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search categories by name or slug..."
+            placeholder="Search departments & categories by name or slug..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full bg-slate-50 border border-slate-200/90 rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
@@ -374,7 +419,7 @@ export function AdminCategoriesPage() {
         <div className="py-20 flex flex-col items-center justify-center space-y-3">
           <Loader size="lg" />
           <span className="text-xs text-amber-700 font-semibold uppercase tracking-wider">
-            Loading Categories...
+            Loading Categories & Departments...
           </span>
         </div>
       ) : (
@@ -383,9 +428,10 @@ export function AdminCategoriesPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80">
               <tr>
-                <th className="py-3.5 px-4">Category</th>
+                <th className="py-3.5 px-4">Entity / Name</th>
+                <th className="py-3.5 px-4">Level</th>
                 <th className="py-3.5 px-4">Slug</th>
-                <th className="py-3.5 px-4">Parent Category</th>
+                <th className="py-3.5 px-4">Parent Dept / Category</th>
                 <th className="py-3.5 px-4">Sort Order</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
@@ -395,12 +441,13 @@ export function AdminCategoriesPage() {
               {paginatedCategories.length > 0 ? (
                 paginatedCategories.map((c) => {
                   const id = c.id || (c as any)._id;
+                  const isDept = c.isTopLevel || c.type === 'department';
                   const parentName =
                     typeof c.parentCategory === 'object' && c.parentCategory?.name
                       ? c.parentCategory.name
                       : categories.find(
                           (parent) => (parent.id || (parent as any)._id) === c.parentCategory,
-                        )?.name || 'Root Category';
+                        )?.name || (isDept ? '— (Top Department)' : 'Root Category');
 
                   return (
                     <tr key={id} className="hover:bg-slate-50/80 transition-colors">
@@ -414,11 +461,24 @@ export function AdminCategoriesPage() {
                           className="w-10 h-10 rounded-lg object-cover bg-slate-100 border border-slate-200/80 shrink-0 shadow-2xs"
                         />
                         <div>
-                          <p className="font-bold text-slate-900 text-sm">{c.name}</p>
-                          <span className="text-[11px] text-slate-500 block">
+                          <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                            <span>{c.name}</span>
+                          </p>
+                          <span className="text-[11px] text-slate-500 block truncate max-w-[200px]">
                             {c.description || 'No description'}
                           </span>
                         </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {isDept ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-amber-600" /> Department
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            Sub-Category
+                          </span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 font-mono font-semibold text-slate-900">{c.slug}</td>
                       <td className="py-3.5 px-4 text-slate-700 font-medium">{parentName}</td>

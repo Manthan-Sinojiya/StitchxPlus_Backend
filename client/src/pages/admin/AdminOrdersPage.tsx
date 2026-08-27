@@ -30,7 +30,8 @@ export function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [statusFilter]);
+    setCurrentPage(1);
+  }, [statusFilter, search]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,9 +63,7 @@ export function AdminOrdersPage() {
     }
   };
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, statusFilter]);
+
 
   const totalPages = Math.ceil((orders || []).length / itemsPerPage) || 1;
   const paginatedOrders = (orders || []).slice(

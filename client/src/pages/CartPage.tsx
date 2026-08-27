@@ -141,6 +141,25 @@ export const CartPage: React.FC = () => {
                             </button>
                           </div>
 
+                          {(item.selectedColor || item.selectedSize) && (
+                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                              {item.selectedColor && (
+                                <span>
+                                  Color:{' '}
+                                  <strong className="text-navy-900">
+                                    {typeof item.selectedColor === 'string'
+                                      ? item.selectedColor
+                                      : item.selectedColor?.name}
+                                  </strong>
+                                </span>
+                              )}
+                              {item.selectedColor && item.selectedSize && <span>•</span>}
+                              {item.selectedSize && (
+                                <span>Size: <strong className="text-navy-900">{item.selectedSize}</strong></span>
+                              )}
+                            </div>
+                          )}
+
                           {/* Customization Summary Tags */}
                           {optEntries.length > 0 && (
                             <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-1.5">
