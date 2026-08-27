@@ -387,35 +387,6 @@ export function Header() {
             </Link>
           )}
 
-          {/* Account Icon / Badge */}
-          {isAuthenticated ? (
-            <div className="hidden sm:flex items-center gap-1.5">
-              <Link
-                to="/account"
-                className="flex items-center gap-2 p-2 px-3 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold"
-              >
-                <UserIcon className="w-4 h-4 text-bronze-600" />
-                <span className="max-w-[100px] truncate">{user?.name.split(' ')[0]}</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                title="Sign Out"
-                className="p-2 text-charcoal-400 hover:text-rose-600 rounded-xl hover:bg-cream-100 transition-colors cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-2 p-2 px-3.5 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold hidden sm:flex"
-              aria-label="User Account"
-            >
-              <UserIcon className="w-4 h-4 text-bronze-600" />
-              <span>Sign In</span>
-            </Link>
-          )}
-
           {/* Cart Trigger */}
           <button
             onClick={openCart}
@@ -432,6 +403,35 @@ export function Header() {
               </span>
             )}
           </button>
+
+          {/* Account Icon / Badge & LogOut */}
+          {isAuthenticated ? (
+            <div className="flex items-center gap-1.5">
+              <Link
+                to="/account"
+                className="flex items-center gap-2 p-2 px-3 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold"
+              >
+                <UserIcon className="w-4 h-4 text-bronze-600" />
+                <span className="hidden sm:inline max-w-[100px] truncate">{user?.name.split(' ')[0]}</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                title="Sign Out"
+                className="p-2 text-charcoal-500 hover:text-rose-600 rounded-xl hover:bg-cream-100 transition-colors cursor-pointer flex items-center justify-center"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-2 p-2 px-3.5 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold"
+              aria-label="User Account"
+            >
+              <UserIcon className="w-4 h-4 text-bronze-600" />
+              <span className="hidden sm:inline">Sign In</span>
+            </Link>
+          )}
         </div>
       </div>
 

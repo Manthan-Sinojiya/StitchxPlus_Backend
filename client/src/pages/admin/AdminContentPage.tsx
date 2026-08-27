@@ -2275,7 +2275,8 @@ export function AdminContentPage() {
                 >
                   <option value="custom_promo">Custom Promo / Spotlight Banner</option>
                   <option value="custom_html">Custom HTML Content Block</option>
-                  <option value="hero font-bold">Hero Banner Slider</option>
+                  <option value="blog">Atelier Journal & Blogs Section</option>
+                  <option value="hero">Hero Banner Slider</option>
                   <option value="showcase_tabs">Product Showcase Tabs</option>
                   <option value="categories">Signature Categories Grid</option>
                   <option value="faq">FAQ Accordion</option>

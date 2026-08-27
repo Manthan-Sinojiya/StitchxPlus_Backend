@@ -48,6 +48,10 @@ export function AdminCustomizationPage() {
     fetchGroups();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
+
   const openAddEditor = () => {
     setEditingGroup(null);
     setFormData({
@@ -344,10 +348,6 @@ export function AdminCustomizationPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search]);
 
   const filteredGroups = (groups || []).filter((grp) => {
     const s = search.toLowerCase().trim();

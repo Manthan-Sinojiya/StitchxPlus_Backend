@@ -37,14 +37,6 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            to={isAuthenticated ? '/account' : '/login'}
-            className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-navy-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
-          >
-            <UserIcon className="w-4 h-4" />
-            <span className="hidden sm:inline">{isAuthenticated ? user?.name || 'Account' : 'Sign In'}</span>
-          </Link>
-
           <button
             onClick={openCart}
             className="flex items-center gap-2 bg-navy-900 hover:bg-navy-800 text-gold-400 font-semibold px-3.5 py-2 rounded-xl text-xs transition-colors shadow-sm"
@@ -57,6 +49,14 @@ export function Header() {
               </span>
             )}
           </button>
+
+          <Link
+            to={isAuthenticated ? '/account' : '/login'}
+            className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-navy-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+          >
+            <UserIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">{isAuthenticated ? user?.name || 'Account' : 'Sign In'}</span>
+          </Link>
         </div>
       </div>
     </header>

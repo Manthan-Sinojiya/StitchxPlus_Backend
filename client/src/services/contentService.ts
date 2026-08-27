@@ -226,8 +226,9 @@ export const DEFAULT_HOME_LAYOUT_SECTIONS: HomeLayoutSection[] = [
   { id: 'sec_showcase', type: 'showcase_tabs', title: 'Dynamic Product Showcase Tabs', subtitle: 'New Arrivals, Best Sellers, Custom Sections', isActive: true, sortOrder: 2 },
   { id: 'sec_categories', type: 'categories', title: 'Signature Menswear Categories', subtitle: 'Curated Apparel Grids', isActive: true, sortOrder: 3 },
   { id: 'sec_curated', type: 'curated_collections' as any, title: 'Curated Collections For Style', subtitle: 'Interactive Accordion & Dynamic Image Gallery', isActive: true, sortOrder: 4 },
-  { id: 'sec_faq', type: 'faq', title: 'Tailoring Process & FAQ', subtitle: 'Frequently Asked Questions', isActive: true, sortOrder: 5 },
-  { id: 'sec_testimonials', type: 'testimonials', title: 'Words From Our Bespoke Clientele', subtitle: 'Client Reviews', isActive: true, sortOrder: 6 },
+  { id: 'sec_blog', type: 'blog' as any, title: 'The Atelier Journal', subtitle: 'Published Sartorial Guides & Articles', isActive: true, sortOrder: 5 },
+  { id: 'sec_faq', type: 'faq', title: 'Tailoring Process & FAQ', subtitle: 'Frequently Asked Questions', isActive: true, sortOrder: 6 },
+  { id: 'sec_testimonials', type: 'testimonials', title: 'Words From Our Bespoke Clientele', subtitle: 'Client Reviews', isActive: true, sortOrder: 7 },
 ];
 
 export const contentService = {

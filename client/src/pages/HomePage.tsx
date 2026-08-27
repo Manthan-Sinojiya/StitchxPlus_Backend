@@ -9,6 +9,7 @@ import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
 import { Product, Category, CustomSection, HomeLayoutSection } from '@stitchx/shared';
 import { CuratedCollectionsSection } from '../components/home/CuratedCollectionsSection';
+import { BlogSection } from '../components/home/BlogSection';
 
 const HERO_SLIDES = [
   {
@@ -86,6 +87,7 @@ export function HomePage() {
   const [homeLayoutSections, setHomeLayoutSections] = useState<HomeLayoutSection[]>([]);
 
   const testimonialsScrollRef = useRef<HTMLDivElement>(null);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
 
   const scrollTestimonials = (direction: 'left' | 'right') => {
     if (testimonialsScrollRef.current) {
@@ -250,9 +252,9 @@ export function HomePage() {
     }).length;
   };
 
-  // Filter product cards based on active tab - STRICT ADMIN SELECTION ONLY
+  // Filter product cards based on active tab
   const rawProducts = fetchedProducts.length > 0 ? fetchedProducts : SAMPLE_PRODUCTS;
-  const filteredShowcaseProducts = rawProducts.filter((p: any) => {
+  let filteredShowcaseProducts = rawProducts.filter((p: any) => {
     if (p.status && p.status !== 'active') return false;
 
     const tags = Array.isArray(p.tags) ? p.tags : (Array.isArray(p.customSections) ? p.customSections : []);
@@ -271,11 +273,14 @@ export function HomePage() {
       return p.isDeal === true || tags.includes('deal') || tags.includes('deals') || collections.includes('deals');
     }
 
-    // Filter by custom section code or tag (EXPLICIT ADMIN SELECTION ONLY)
+    // Filter by custom section code or tag
     return tags.includes(activeTab) || collections.includes(activeTab);
   });
 
-  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  // Smart fallback: If no products explicitly match the active tab criteria, fallback to all active products
+  if (filteredShowcaseProducts.length === 0 && rawProducts.length > 0) {
+    filteredShowcaseProducts = rawProducts.filter((p: any) => !p.status || p.status === 'active');
+  }
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categoryScrollRef.current) {
@@ -340,9 +345,10 @@ export function HomePage() {
       { id: 'sec_showcase', type: 'showcase_tabs', title: 'Product Showcase', isActive: true, sortOrder: 2 },
       { id: 'sec_categories', type: 'categories', title: 'Categories Grid', isActive: true, sortOrder: 3 },
       { id: 'sec_curated', type: 'curated_collections' as any, title: 'Curated Collections', isActive: true, sortOrder: 4 },
-      { id: 'sec_faq', type: 'faq', title: 'FAQ', isActive: true, sortOrder: 5 },
-      { id: 'sec_testimonials', type: 'testimonials', title: 'Testimonials', isActive: true, sortOrder: 6 },
-      { id: 'sec_newsletter', type: 'newsletter', title: 'Newsletter', isActive: true, sortOrder: 7 },
+      { id: 'sec_blog', type: 'blog' as any, title: 'Atelier Journal', isActive: true, sortOrder: 5 },
+      { id: 'sec_faq', type: 'faq', title: 'FAQ', isActive: true, sortOrder: 6 },
+      { id: 'sec_testimonials', type: 'testimonials', title: 'Testimonials', isActive: true, sortOrder: 7 },
+      { id: 'sec_newsletter', type: 'newsletter', title: 'Newsletter', isActive: true, sortOrder: 8 },
     ];
 
   // Render individual homepage section by type
@@ -565,6 +571,10 @@ export function HomePage() {
 
       case 'curated_collections' as any:
         return <CuratedCollectionsSection key={sectionItem.id} />;
+
+      case 'blog' as any:
+      case 'blogs' as any:
+        return <BlogSection key={sectionItem.id} title={sectionItem.title} subtitle={sectionItem.subtitle} />;
 
       case 'custom_promo':
         return (
