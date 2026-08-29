@@ -41,34 +41,6 @@ const HERO_SLIDES = [
   },
 ];
 
-const SAMPLE_PRODUCTS = [
-  {
-    id: 'sample-1',
-    name: 'Bespoke Navy Wool Suit',
-    slug: 'bespoke-navy-wool-suit',
-    basePrice: 699,
-    compareAtPrice: 850,
-    images: [{ url: '/images/hero/suit1.jpg', alt: 'Navy Suit', isPrimary: true }],
-    category: 'Suits',
-    rating: 4.9,
-    numReviews: 24,
-    isNew: true,
-    isFeatured: true,
-  },
-  {
-    id: 'sample-2',
-    name: 'Charcoal Italian Wool Blazer',
-    slug: 'charcoal-italian-wool-blazer',
-    basePrice: 499,
-    compareAtPrice: 599,
-    images: [{ url: '/images/hero/suit2.jpg', alt: 'Charcoal Blazer', isPrimary: true }],
-    category: 'Blazers',
-    rating: 4.8,
-    numReviews: 18,
-    isNew: true,
-    isFeatured: true,
-  },
-];
 
 export function HomePage() {
   const [activeSlide, setActiveSlide] = useState(0);
@@ -77,6 +49,7 @@ export function HomePage() {
   const showcaseItemsPerPage = 8;
 
   const [homeData, setHomeData] = useState<CMSHomeData | null>(null);
+  const [loadingData, setLoadingData] = useState<boolean>(true);
   const [faqItems, setFaqItems] = useState<CMSFAQItem[]>([]);
   const [testimonialsItems, setTestimonialsItems] = useState<CMSTestimonial[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -108,6 +81,7 @@ export function HomePage() {
   }, []);
 
   const loadPageData = () => {
+    setLoadingData(true);
     Promise.all([
       contentService.getHomeContent().catch(() => null),
       contentService.getFaqContent().catch(() => []),
@@ -150,6 +124,8 @@ export function HomePage() {
       if (Array.isArray(layoutRes)) {
         setHomeLayoutSections(layoutRes);
       }
+    }).finally(() => {
+      setLoadingData(false);
     });
   };
 
@@ -232,10 +208,10 @@ export function HomePage() {
       const pCatSlug = (pCatObj ? pCatObj.slug : p.categorySlug || '').toLowerCase();
       const pParentCatId = pCatObj
         ? String(
-            typeof pCatObj.parentCategory === 'object' && pCatObj.parentCategory
-              ? pCatObj.parentCategory._id || pCatObj.parentCategory.id
-              : pCatObj.parentCategory || '',
-          ).toLowerCase()
+          typeof pCatObj.parentCategory === 'object' && pCatObj.parentCategory
+            ? pCatObj.parentCategory._id || pCatObj.parentCategory.id
+            : pCatObj.parentCategory || '',
+        ).toLowerCase()
         : '';
       const pParentCatSlug = (
         pCatObj && typeof pCatObj.parentCategory === 'object' && pCatObj.parentCategory
@@ -253,8 +229,8 @@ export function HomePage() {
   };
 
   // Filter product cards based on active tab
-  const rawProducts = fetchedProducts.length > 0 ? fetchedProducts : SAMPLE_PRODUCTS;
-  let filteredShowcaseProducts = rawProducts.filter((p: any) => {
+  const rawProducts = fetchedProducts;
+  const filteredShowcaseProducts = rawProducts.filter((p: any) => {
     if (p.status && p.status !== 'active') return false;
 
     const tags = Array.isArray(p.tags) ? p.tags : (Array.isArray(p.customSections) ? p.customSections : []);
@@ -276,11 +252,6 @@ export function HomePage() {
     // Filter by custom section code or tag
     return tags.includes(activeTab) || collections.includes(activeTab);
   });
-
-  // Smart fallback: If no products explicitly match the active tab criteria, fallback to all active products
-  if (filteredShowcaseProducts.length === 0 && rawProducts.length > 0) {
-    filteredShowcaseProducts = rawProducts.filter((p: any) => !p.status || p.status === 'active');
-  }
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categoryScrollRef.current) {
@@ -437,8 +408,21 @@ export function HomePage() {
               ))}
             </div>
 
-            {/* Product Cards Grid */}
-            {displayProducts.length > 0 ? (
+            {/* Product Cards Grid / Loading Skeleton */}
+            {loadingData ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="space-y-4 rounded-3xl bg-slate-50 p-4 border border-slate-200/60 animate-pulse">
+                    <div className="aspect-[3/4] w-full rounded-2xl bg-slate-200/80" />
+                    <div className="space-y-2.5 pt-1">
+                      <div className="h-3 w-1/4 bg-slate-200/80 rounded-full" />
+                      <div className="h-4.5 w-3/4 bg-slate-200/80 rounded-full" />
+                      <div className="h-3.5 w-1/3 bg-slate-200/80 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : displayProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
                 {displayProducts.map((prod: any, idx: number) => (
                   <ProductCard
@@ -451,11 +435,11 @@ export function HomePage() {
                 ))}
               </div>
             ) : (
-              <div className="py-12 px-4 text-center bg-slate-50 border border-slate-200/80 rounded-2xl max-w-xl mx-auto space-y-3">
+              <div className="py-12 px-4 text-center bg-slate-50 border border-slate-200/80 rounded-2xl max-w-xl mx-auto space-y-3 shadow-xs">
                 <TagIcon className="w-8 h-8 text-amber-500 mx-auto opacity-70" />
-                <h4 className="text-base font-bold text-slate-800">No products assigned to this section</h4>
+                <h4 className="text-base font-bold text-slate-800">No Data Found</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Only products explicitly marked as <strong>{activeShowcaseTabs.find((t) => t.code === activeTab)?.name || activeTab}</strong> by the admin in the Products Panel will appear here.
+                  No products available under <strong>{activeShowcaseTabs.find((t) => t.code === activeTab)?.name || activeTab}</strong> at this time.
                 </p>
               </div>
             )}
@@ -513,8 +497,16 @@ export function HomePage() {
               </div>
             </div>
 
-            {/* Category Cards Layout: Grid if <= 4, Scrollable Slider if > 4 */}
-            {categories.length > 0 ? (
+            {/* Category Cards Layout or Loading Skeleton */}
+            {loadingData ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="aspect-[4/5] w-full rounded-3xl bg-slate-200/80 animate-pulse p-4 flex flex-col justify-end border border-slate-200/60">
+                    <div className="h-16 w-full rounded-2xl bg-white/70 backdrop-blur-sm" />
+                  </div>
+                ))}
+              </div>
+            ) : categories.length > 0 ? (
               <div
                 ref={categoryScrollRef}
                 className={
@@ -532,11 +524,10 @@ export function HomePage() {
                     <Link
                       key={cat.id || (cat as any)._id}
                       to={`/collections?category=${cat.slug}`}
-                      className={`group relative rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1.5 cursor-pointer border border-slate-200/80 aspect-[4/5] flex flex-col justify-end bg-slate-950 ${
-                        isScrollableCategories
-                          ? 'w-[280px] sm:w-[300px] lg:w-[310px] shrink-0 snap-start'
-                          : ''
-                      }`}
+                      className={`group relative rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1.5 cursor-pointer border border-slate-200/80 aspect-[4/5] flex flex-col justify-end bg-slate-950 ${isScrollableCategories
+                        ? 'w-[280px] sm:w-[300px] lg:w-[310px] shrink-0 snap-start'
+                        : ''
+                        }`}
                     >
                       {/* Full-bleed Background Image */}
                       <img
@@ -562,8 +553,12 @@ export function HomePage() {
                 })}
               </div>
             ) : (
-              <div className="col-span-full py-12 text-center text-slate-500 bg-slate-50 border border-slate-200 rounded-2xl">
-                <p className="text-sm">No active departments or categories available.</p>
+              <div className="col-span-full py-12 px-4 text-center bg-slate-50 border border-slate-200/80 rounded-2xl max-w-xl mx-auto space-y-3 shadow-xs">
+                <TagIcon className="w-8 h-8 text-amber-500 mx-auto opacity-70" />
+                <h4 className="text-base font-bold text-slate-800">No Data Found</h4>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  No active departments or categories available at this time.
+                </p>
               </div>
             )}
           </section>
@@ -626,53 +621,53 @@ export function HomePage() {
 
       case 'faq':
         return (
-          <section key={sectionItem.id} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-8 sm:p-12 shadow-xs space-y-8">
-              <div className="space-y-2 border-b border-slate-100 pb-6">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-widest uppercase bg-amber-50 text-amber-800 border border-amber-200/80">
-                  FAQ & TAILORING GUIDANCE
+          <section key={sectionItem.id} className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-neutral-200 pb-4">
+              <div>
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/20 mb-2">
+                  FAQ & Tailoring Guidance
                 </span>
-                <h2 className="text-3xl font-bold font-serif text-slate-950">
+                <h2 className="text-3xl sm:text-4xl font-bold font-serif text-slate-950">
                   {sectionItem.title && sectionItem.title !== 'Tailoring Process & FAQ'
                     ? sectionItem.title
                     : 'Tailoring Process & FAQ'}
                 </h2>
-                <p className="text-sm text-slate-500">
-                  {sectionItem.subtitle || 'Learn more about our digital measurement patterns, Italian wool sourcing, and fitting guarantee.'}
-                </p>
               </div>
-
-              <Accordion
-                items={
-                  faqItems && Array.isArray(faqItems) && faqItems.length > 0
-                    ? faqItems.map((item) => ({
-                        id: item.id,
-                        title: item.question,
-                        content: item.answer,
-                      }))
-                    : [
-                        {
-                          id: 'faq-1',
-                          title: 'How accurate is the digital pattern measurement system?',
-                          content:
-                            'Our digital fit algorithm asks 6 key physical metrics and calculates over 30 micro-body variables with 99.4% tailor accuracy.',
-                        },
-                        {
-                          id: 'faq-2',
-                          title: 'What fabrics do you source?',
-                          content:
-                            'We exclusively partner with heritage mills in Biella and Como, Italy including Loro Piana, Vitale Barberis Canonico, and Dormeuil.',
-                        },
-                        {
-                          id: 'faq-3',
-                          title: 'What if my suit needs minor adjustments?',
-                          content:
-                            'We cover up to $75 in local tailoring credits or provide a complete free remake if your garment falls outside our Fit Guarantee.',
-                        },
-                      ]
-                }
-              />
+              <p className="text-sm text-slate-600 max-w-md hidden sm:block">
+                {sectionItem.subtitle || 'Learn more about our digital measurement patterns, Italian wool sourcing, and fitting guarantee.'}
+              </p>
             </div>
+
+            <Accordion
+              items={
+                faqItems && Array.isArray(faqItems) && faqItems.length > 0
+                  ? faqItems.map((item) => ({
+                      id: item.id,
+                      title: item.question,
+                      content: item.answer,
+                    }))
+                  : [
+                      {
+                        id: 'faq-1',
+                        title: 'How accurate is the digital pattern measurement system?',
+                        content:
+                          'Our digital fit algorithm asks 6 key physical metrics and calculates over 30 micro-body variables with 99.4% tailor accuracy.',
+                      },
+                      {
+                        id: 'faq-2',
+                        title: 'What fabrics do you source?',
+                        content:
+                          'We exclusively partner with heritage mills in Biella and Como, Italy including Loro Piana, Vitale Barberis Canonico, and Dormeuil.',
+                      },
+                      {
+                        id: 'faq-3',
+                        title: 'What if my suit needs minor adjustments?',
+                        content:
+                          'We cover up to $75 in local tailoring credits or provide a complete free remake if your garment falls outside our Fit Guarantee.',
+                      },
+                    ]
+              }
+            />
           </section>
         );
 

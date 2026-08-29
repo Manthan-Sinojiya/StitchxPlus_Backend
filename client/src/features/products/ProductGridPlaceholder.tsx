@@ -1,39 +1,35 @@
-import { ShoppingBag, Star } from 'lucide-react';
+import { ShoppingBag, Star, Tag as TagIcon } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
-const SAMPLE_PRODUCTS = [
-  {
-    id: '1',
-    name: 'Precision Custom Hoodie',
-    category: 'Apparel & Textiles',
-    price: 89.99,
-    rating: 4.9,
-    tag: 'Best Seller',
-  },
-  {
-    id: '2',
-    name: 'Tailored Embroidered Jacket',
-    category: 'Outerwear',
-    price: 149.99,
-    rating: 5.0,
-    tag: 'New Release',
-  },
-  {
-    id: '3',
-    name: 'Seamless Performance Tee',
-    category: 'Activewear',
-    price: 49.99,
-    rating: 4.8,
-    tag: 'Featured',
-  },
-];
+interface ProductGridPlaceholderProps {
+  products?: Array<{
+    id: string;
+    name: string;
+    category: string;
+    price: number;
+    rating: number;
+    tag: string;
+  }>;
+}
 
-export function ProductGridPlaceholder() {
+export function ProductGridPlaceholder({ products = [] }: ProductGridPlaceholderProps) {
   const incrementCart = useAppStore((state) => state.incrementCart);
+
+  if (!products || products.length === 0) {
+    return (
+      <div className="py-12 px-4 text-center bg-slate-50 border border-slate-200/80 rounded-2xl max-w-xl mx-auto space-y-3 shadow-xs my-8">
+        <TagIcon className="w-8 h-8 text-amber-500 mx-auto opacity-70" />
+        <h4 className="text-base font-bold text-slate-800">No Data Found</h4>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          No products available to display at this time.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
-      {SAMPLE_PRODUCTS.map((product) => (
+      {products.map((product) => (
         <div
           key={product.id}
           className="group relative bg-white border border-slate-200/80 rounded-2xl p-6 hover:border-cyan-500/50 transition-all duration-300 shadow-sm hover:shadow-md"
@@ -68,3 +64,4 @@ export function ProductGridPlaceholder() {
     </div>
   );
 }
+

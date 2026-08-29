@@ -243,20 +243,24 @@ export function CollectionsPage() {
 
       {/* Product Grid */}
       {loading ? (
-        <div className="min-h-[40vh] flex items-center justify-center p-8">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 border-4 border-bronze-600 border-t-transparent rounded-full animate-spin" />
-            <span className="text-xs font-semibold text-charcoal-500 tracking-wider uppercase font-serif">
-              Retrieving Tailored Garments...
-            </span>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <div key={idx} className="space-y-4 rounded-3xl bg-cream-50/70 p-4 border border-charcoal-200/60 animate-pulse">
+              <div className="aspect-[3/4] w-full rounded-2xl bg-charcoal-200/40" />
+              <div className="space-y-2.5 pt-1">
+                <div className="h-3 w-1/4 bg-charcoal-200/40 rounded-full" />
+                <div className="h-4.5 w-3/4 bg-charcoal-200/40 rounded-full" />
+                <div className="h-3.5 w-1/3 bg-charcoal-200/40 rounded-full" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : products.length === 0 ? (
         <div className="bg-cream-50 border border-charcoal-200/70 rounded-3xl p-12 text-center space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-white border border-charcoal-200 text-charcoal-400 flex items-center justify-center mx-auto">
             <Filter className="w-8 h-8" />
           </div>
-          <h3 className="text-2xl font-bold font-serif text-charcoal-950">No Tailored Garments Found</h3>
+          <h3 className="text-2xl font-bold font-serif text-charcoal-950">No Data Found</h3>
           <p className="text-charcoal-600 text-sm max-w-md mx-auto">
             We couldn&apos;t find any items matching your active category or search query. Try resetting your search terms.
           </p>

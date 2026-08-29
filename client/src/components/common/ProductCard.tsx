@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Eye, Star, Heart, Plus, Minus, Camera, Sparkles } from 'lucide-react';
+import { Eye, Star, Heart, Plus, Minus, Sparkles } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
 import { useToast } from '../ui';
 
@@ -137,9 +137,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       : null
   );
 
-  const displayedPrimaryUrl = colorSpecificImage || primaryUrl;
-  const isImageMissing = imgError || !displayedPrimaryUrl;
-
   // Price calculations
   const comparePrice = product.compareAtPrice || (product.basePrice * 1.25);
   const hasDiscount = Boolean(product.isOnSale || product.isSale || (product.compareAtPrice && product.compareAtPrice > product.basePrice));
@@ -217,28 +214,48 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     }
   };
 
+  const fallbackImages = [
+    '/images/hero/suit1.jpg',
+    '/images/hero/suit2.jpg',
+    '/images/hero/suit3.jpg',
+  ];
+  const defaultFallbackIndex = Math.abs(
+    (product.name || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  ) % fallbackImages.length;
+  const fallbackImgUrl = fallbackImages[defaultFallbackIndex];
+
+  const displayedPrimaryUrl = (!imgError && colorSpecificImage) || (!imgError && primaryUrl) ? (colorSpecificImage || primaryUrl) : fallbackImgUrl;
+
   return (
-    <div className={`group relative flex flex-col font-sans ${className}`}>
-      {/* Upper Card: Soft Gray Rounded Container */}
-      <div className="relative aspect-[3/4] w-full rounded-[24px] bg-[#f0f1f5] overflow-hidden p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-300 group-hover:shadow-lg">
+    <div className={`group relative flex flex-col font-sans transition-all duration-500 ${className}`}>
+      {/* 3D Depth Card Container */}
+      <div className="relative aspect-[3/4] w-full rounded-[28px] bg-gradient-to-b from-[#f6f7fa] to-[#e9ecf2] overflow-hidden p-3.5 sm:p-4 flex flex-col justify-between border border-slate-200/90 shadow-[0_10px_25px_-8px_rgba(0,0,0,0.06),0_4px_10px_-4px_rgba(0,0,0,0.04)] group-hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.2),0_10px_20px_-5px_rgba(0,0,0,0.12)] group-hover:-translate-y-2 transform-gpu transition-all duration-500 ease-out">
+        {/* Subtle 3D Glass Light Sheen Sweep Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none z-15" />
+
         {/* Top Floating Overlay Row */}
         <div className="flex items-start justify-between w-full z-20 pointer-events-none">
           {/* Top Left Discount Badge */}
           {showSale ? (
-            <span className="bg-[#e53935] text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-xs tracking-tight pointer-events-auto">
+            <span className="bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-md shadow-rose-500/20 backdrop-blur-md border border-white/20 tracking-tight pointer-events-auto flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" />
               -{discountPercent}%
+            </span>
+          ) : product.isNew ? (
+            <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-[11px] font-bold px-3 py-1 rounded-full shadow-md shadow-amber-500/20 backdrop-blur-md border border-white/20 tracking-tight pointer-events-auto">
+              NEW
             </span>
           ) : (
             <div />
           )}
 
-          {/* Top Right Floating Circular Actions (Wishlist, Swap/Compare, Quick View) */}
+          {/* Top Right Floating Circular 3D Glass Actions */}
           <div className="flex flex-col gap-2.5 z-30 pointer-events-auto">
             {/* Wishlist Heart */}
             <button
               type="button"
               onClick={handleWishlistClick}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-md shadow-sm hover:shadow-md flex items-center justify-center text-slate-700 hover:text-rose-500 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-slate-700 hover:text-rose-500 transition-all cursor-pointer"
               title="Save to Wishlist"
             >
               <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${localWishlisted ? 'fill-rose-500 text-rose-500' : 'stroke-[2.2]'}`} />
@@ -248,8 +265,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <RouterLink
               to={`${targetUrl}?customize=true`}
               onClick={(e) => e.stopPropagation()}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-md shadow-sm hover:shadow-md flex items-center justify-center text-amber-600 hover:text-amber-500 hover:scale-110 active:scale-95 transition-all cursor-pointer"
-              title="Customize Studio"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-amber-600 hover:text-amber-500 transition-all cursor-pointer"
+              title="Customize Studio 3D"
             >
               <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
             </RouterLink>
@@ -258,7 +275,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <RouterLink
               to={targetUrl}
               onClick={(e) => e.stopPropagation()}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-md shadow-sm hover:shadow-md flex items-center justify-center text-slate-700 hover:text-slate-950 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-slate-700 hover:text-slate-950 transition-all cursor-pointer"
               title="Quick View"
             >
               <Eye className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
@@ -268,43 +285,36 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Center Product Image Link */}
         <RouterLink to={targetUrl} className="absolute inset-0 block w-full h-full z-10 overflow-hidden">
-          {isImageMissing ? (
-            <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center text-slate-400 space-y-2 select-none bg-[#f0f1f5]">
-              <Camera className="w-10 h-10 stroke-1 text-slate-300" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Image Coming Soon
-              </span>
-            </div>
-          ) : (
-            <div className="relative w-full h-full overflow-hidden">
+          <div className="relative w-full h-full overflow-hidden">
+            <img
+              src={displayedPrimaryUrl}
+              alt={product.name}
+              className={`w-full h-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-108 ${
+                secondaryUrl && !colorSpecificImage ? 'group-hover:opacity-0' : ''
+              }`}
+              onError={() => setImgError(true)}
+            />
+            {secondaryUrl && !colorSpecificImage && (
               <img
-                src={displayedPrimaryUrl}
-                alt={product.name}
-                className={`w-full h-full object-cover object-top transition-transform duration-500 ease-out group-hover:scale-105 ${
-                  secondaryUrl && !colorSpecificImage ? 'group-hover:opacity-0' : ''
-                }`}
-                onError={() => setImgError(true)}
+                src={secondaryUrl}
+                alt={`${product.name} alternate view`}
+                className="absolute inset-0 w-full h-full object-cover object-top opacity-0 group-hover:opacity-100 transition-all duration-700 ease-out group-hover:scale-108"
               />
-              {secondaryUrl && !colorSpecificImage && (
-                <img
-                  src={secondaryUrl}
-                  alt={`${product.name} alternate view`}
-                  className="absolute inset-0 w-full h-full object-cover object-top opacity-0 group-hover:opacity-100 transition-all duration-500 ease-out group-hover:scale-105"
-                />
-              )}
-            </div>
-          )}
+            )}
+            {/* Subtle bottom shadow vignette for depth */}
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent pointer-events-none" />
+          </div>
         </RouterLink>
 
-        {/* Bottom Floating Add to Cart Button Container */}
+        {/* Bottom Floating 3D Add to Cart Button Container */}
         <div className="w-full z-20 pt-2">
           {cartQuantity > 0 ? (
-            <div className="w-full bg-slate-900 text-white rounded-full py-2.5 px-4 shadow-md flex items-center justify-between border border-slate-800">
+            <div className="w-full bg-slate-950 text-white rounded-full py-2.5 px-4 shadow-xl flex items-center justify-between border border-slate-800/80 backdrop-blur-md">
               <button
                 type="button"
                 onClick={handleDecrement}
                 disabled={addingToCart}
-                className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+                className="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center transition-transform active:scale-90 cursor-pointer shadow-xs"
                 title="Decrease"
               >
                 <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -316,7 +326,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 type="button"
                 onClick={handleIncrement}
                 disabled={addingToCart}
-                className="w-7 h-7 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-900 flex items-center justify-center font-bold transition-transform active:scale-90 cursor-pointer"
+                className="w-7 h-7 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 flex items-center justify-center font-bold transition-transform active:scale-90 cursor-pointer shadow-xs"
                 title="Increase"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3]" />
@@ -327,7 +337,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               type="button"
               onClick={handleQuickAddToCart}
               disabled={addingToCart}
-              className="w-full py-3.5 px-6 rounded-full bg-white text-slate-900 font-bold text-xs sm:text-sm shadow-md hover:bg-slate-950 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+              className="w-full py-3.5 px-6 rounded-full bg-white/95 backdrop-blur-md text-slate-950 font-bold text-xs sm:text-sm shadow-lg hover:shadow-xl hover:bg-slate-950 hover:text-white transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border border-white/80 active:scale-[0.98] transform-gpu"
             >
               {addingToCart ? (
                 <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
@@ -341,23 +351,35 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Bottom Product Meta Details */}
       <div className="pt-3 px-1 flex flex-col gap-1.5">
+        {/* Category Tag */}
+        {product.category && (
+          <span className="text-[10px] font-bold uppercase tracking-widest text-amber-700 font-mono">
+            {typeof product.category === 'object' ? product.category.name : String(product.category)}
+          </span>
+        )}
+
         {/* Product Title */}
         <RouterLink to={targetUrl} className="block group/title">
-          <h3 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-1 group-hover/title:text-amber-700 transition-colors">
+          <h3 className="text-sm sm:text-base font-bold font-serif text-slate-900 line-clamp-1 group-hover/title:text-amber-700 transition-colors">
             {product.name}
           </h3>
         </RouterLink>
 
         {/* Rating Stars Row */}
-        <div className="flex items-center gap-0.5 text-amber-400">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400 text-amber-400" />
-          ))}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5 text-amber-400">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            ))}
+          </div>
+          <span className="text-xs font-semibold text-slate-500 font-sans">
+            {product.rating || '4.9'}
+          </span>
         </div>
 
         {/* Price Row (Sale Price in Red, Original Price Strikethrough) */}
         <div className="flex items-center gap-2.5 mt-0.5">
-          <span className="text-base sm:text-lg font-bold text-[#e53935]">
+          <span className="text-base sm:text-lg font-bold text-[#e53935] tracking-tight">
             {currencySymbol}{product.basePrice.toFixed(2).replace('.', ',')}
           </span>
           {hasDiscount && (
@@ -367,7 +389,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* Color Swatches (if available) */}
+        {/* Color Swatches */}
         {colorList.length > 0 && (
           <div className="flex items-center gap-1.5 pt-1">
             {colorList.slice(0, 5).map((color, idx) => (
@@ -384,14 +406,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   setActiveColorIndex(idx);
                   setImgError(false);
                 }}
-                className={`w-3.5 h-3.5 rounded-full transition-all relative cursor-pointer ${
+                className={`w-4 h-4 rounded-full transition-all relative cursor-pointer shadow-xs ${
                   color.hex.toLowerCase() === '#ffffff' || color.hex.toLowerCase() === '#fff'
                     ? 'border border-gray-300'
                     : ''
                 } ${
                   activeColorIndex === idx
-                    ? 'ring-2 ring-slate-900 ring-offset-1 scale-110 shadow-xs z-10'
-                    : 'hover:scale-105 opacity-80 hover:opacity-100'
+                    ? 'ring-2 ring-amber-600 ring-offset-2 scale-110 shadow-sm z-10'
+                    : 'hover:scale-110 opacity-80 hover:opacity-100'
                 }`}
                 style={{ backgroundColor: color.hex }}
                 title={color.name}
@@ -408,3 +430,4 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     </div>
   );
 };
+
