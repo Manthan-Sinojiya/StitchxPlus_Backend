@@ -46,6 +46,8 @@ export class CheckoutService {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           totalPrice: item.totalPrice,
+          selectedColor: item.selectedColor,
+          selectedSize: item.selectedSize,
           customization: item.customization,
           measurementProfile: item.measurementProfile,
         });

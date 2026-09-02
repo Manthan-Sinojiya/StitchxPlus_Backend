@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { Truck, ShieldCheck, RefreshCw, ChevronDown, Scissors } from 'lucide-react';
 
-export function ShippingReturnInfo() {
+interface ShippingReturnInfoProps {
+  returnPolicy?: string;
+  guaranteeDetails?: string;
+}
+
+export function ShippingReturnInfo({ returnPolicy, guaranteeDetails }: ShippingReturnInfoProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const sections = [
@@ -12,10 +17,12 @@ export function ShippingReturnInfo() {
       content: (
         <div className="space-y-2 text-xs sm:text-sm text-navy-600 leading-relaxed pt-2">
           <p>
-            Every Stitchx Plus garment is hand-crafted to your individual digital body measurement profile.
+            {guaranteeDetails ||
+              'Every Stitchx Plus garment is hand-crafted to your individual digital body measurement profile.'}
           </p>
           <p>
-            If your garment requires minor adjustments upon arrival, we provide up to <strong>$75 in local tailoring credits</strong> or will recreate your garment from scratch at zero cost to you.
+            If your garment requires minor adjustments upon arrival, we provide up to{' '}
+            <strong>$75 in local tailoring credits</strong> or will recreate your garment from scratch at zero cost to you.
           </p>
         </div>
       ),
@@ -40,11 +47,13 @@ export function ShippingReturnInfo() {
     {
       id: 'returns',
       icon: <RefreshCw className="w-5 h-5 text-gold-500" />,
-      title: '30-Day Risk-Free Returns & Exchange',
+      title: returnPolicy || '30-Day Risk-Free Returns & Exchange',
       content: (
         <div className="space-y-2 text-xs sm:text-sm text-navy-600 leading-relaxed pt-2">
           <p>
-            Unworn, unaltered off-the-rack accessories or standard fitting suits can be returned within 30 days of receipt.
+            {returnPolicy
+              ? returnPolicy
+              : 'Unworn, unaltered off-the-rack accessories or standard fitting suits can be returned within 30 days of receipt.'}
           </p>
           <p>
             We provide pre-paid return shipping labels and full refunds processed within 3 business days of return receipt.

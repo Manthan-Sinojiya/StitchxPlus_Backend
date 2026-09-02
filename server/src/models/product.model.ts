@@ -32,6 +32,11 @@ export interface IProductDocument extends Document {
   isFeatured: boolean;
   isNew: boolean;
   isOnSale?: boolean;
+  showSizeChart?: boolean;
+  sizeChartType?: string;
+  returnPolicy?: string;
+  guaranteeDetails?: string;
+  productDetailsSections?: Array<{ id?: string; title: string; content: string }>;
   rating: number;
   numReviews: number;
   seo?: {
@@ -100,6 +105,17 @@ const productSchema = new Schema(
     isFeatured: { type: Boolean, default: false },
     isNew: { type: Boolean, default: false },
     isOnSale: { type: Boolean, default: false },
+    showSizeChart: { type: Boolean, default: true },
+    sizeChartType: { type: String, default: 'suits' },
+    returnPolicy: { type: String, default: '30-Day Hassle-Free Returns & Perfect Fit Guarantee' },
+    guaranteeDetails: { type: String, default: 'Every garment is backed by our 100% Fit Guarantee. Free alterations within 30 days.' },
+    productDetailsSections: [
+      {
+        id: { type: String },
+        title: { type: String },
+        content: { type: String },
+      },
+    ],
     rating: { type: Number, default: 0, min: 0, max: 5 },
     numReviews: { type: Number, default: 0, min: 0 },
     seo: {

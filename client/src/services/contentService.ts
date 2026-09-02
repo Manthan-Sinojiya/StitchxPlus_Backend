@@ -1,5 +1,9 @@
 import { apiClient } from './apiClient';
+import { useAuthStore } from '../store/useAuthStore';
 import { CustomSection, HomeLayoutSection } from '@stitchx/shared';
+
+/** Returns true only if the current session holds a valid access token. */
+const isAdminAuthed = (): boolean => !!(useAuthStore.getState().accessToken);
 
 export interface CMSHeroSlide {
   id?: string;
@@ -369,6 +373,8 @@ export const contentService = {
 
   // Admin Write
   getBlockContent: async (key: string): Promise<any> => {
+    // Skip the admin endpoint for unauthenticated users — avoids repeated 401s on every page load.
+    if (!isAdminAuthed()) return undefined;
     const res = await apiClient.get<any>(`/admin/content/blocks/${key}`);
     if (res.data?.block?.data !== undefined) {
       return res.data.block.data;

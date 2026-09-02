@@ -28,11 +28,12 @@ export function AccountPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
+    <>
       <SEOHead
         title="My Bespoke Account | Stitchx Plus LLC"
         description="Manage your custom menswear orders, saved measurement patterns, profile details, and address book."
       />
+      <div className="space-y-6 sm:space-y-8">
       {/* Header Profile Banner */}
       <div className="bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 rounded-3xl p-8 text-white border border-gold-500/30 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
         <div className="flex items-center gap-5">
@@ -130,5 +131,6 @@ export function AccountPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

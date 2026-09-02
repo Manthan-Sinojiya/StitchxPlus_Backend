@@ -4,15 +4,21 @@ import { cn } from '../../utils/cn';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface ToastItem {
   id: string;
   type: ToastType;
   title: string;
   message?: string;
+  action?: ToastAction;
 }
 
 interface ToastContextType {
-  toast: (type: ToastType, title: string, message?: string) => void;
+  toast: (type: ToastType, title: string, message?: string, action?: ToastAction) => void;
   removeToast: (id: string) => void;
 }
 
@@ -26,14 +32,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toast = useCallback(
-    (type: ToastType, title: string, message?: string) => {
+    (type: ToastType, title: string, message?: string, action?: ToastAction) => {
       const id = Math.random().toString(36).substring(2, 9);
-      const newToast: ToastItem = { id, type, title, message };
+      const newToast: ToastItem = { id, type, title, message, action };
       setToasts((prev) => [...prev, newToast]);
 
       setTimeout(() => {
         removeToast(id);
-      }, 4000);
+      }, 5000);
     },
     [removeToast],
   );
@@ -85,6 +91,18 @@ function ToastCard({ item, onClose }: { item: ToastItem; onClose: () => void }) 
       <div className="flex-1 pr-2">
         <h4 className="text-sm font-bold text-charcoal-950">{item.title}</h4>
         {item.message && <p className="text-xs text-charcoal-600 mt-0.5">{item.message}</p>}
+        {item.action && (
+          <button
+            type="button"
+            onClick={() => {
+              item.action?.onClick();
+              onClose();
+            }}
+            className="mt-2 text-xs font-bold text-amber-700 hover:text-amber-900 underline underline-offset-2 transition-colors cursor-pointer block"
+          >
+            {item.action.label}
+          </button>
+        )}
       </div>
       <button
         onClick={onClose}
@@ -95,3 +113,4 @@ function ToastCard({ item, onClose }: { item: ToastItem; onClose: () => void }) 
     </div>
   );
 }
+

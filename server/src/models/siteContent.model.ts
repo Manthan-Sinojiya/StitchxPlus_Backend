@@ -1,7 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
 
 export interface ISiteContentDocument extends Document {
-  key: 'home' | 'nav' | 'footer' | 'announcement' | 'faq' | 'settings';
+  key: string;
   data: Record<string, any>;
   status: 'draft' | 'published';
   createdAt: Date;
@@ -14,7 +14,6 @@ const siteContentSchema = new Schema<ISiteContentDocument>(
       type: String,
       required: true,
       unique: true,
-      enum: ['home', 'nav', 'footer', 'announcement', 'faq', 'settings'],
       index: true,
     },
     data: { type: Schema.Types.Mixed, required: true, default: {} },

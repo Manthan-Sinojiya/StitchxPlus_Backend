@@ -77,7 +77,7 @@ export const BlogPage: React.FC = () => {
         description="Explore bespoke tailoring guides, Italian fabric masterclasses, and formal eveningwear style insights from Stitchx Plus."
       />
 
-      <div className="space-y-10">
+      <div className="space-y-6 sm:space-y-8">
         {/* Header & Breadcrumbs */}
         <div className="space-y-4">
           <nav className="text-xs font-semibold text-charcoal-500 uppercase tracking-wider flex items-center gap-2">

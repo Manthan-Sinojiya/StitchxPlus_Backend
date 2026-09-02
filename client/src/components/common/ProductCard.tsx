@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Eye, Star, Heart, Plus, Minus, Sparkles } from 'lucide-react';
+import { Eye, Star, Heart, Plus, Minus, Sparkles, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
-import { useToast } from '../ui';
+import { useToast, Modal } from '../ui';
+
 
 export interface ProductCardProps {
   product: {
@@ -28,6 +29,7 @@ export interface ProductCardProps {
     shortDescription?: string;
     colors?: Array<{ name: string; hex: string; image?: string } | string>;
     rating?: number;
+    fabricComposition?: string;
   };
   onWishlistToggle?: (productId: string) => void;
   isWishlisted?: boolean;
@@ -86,11 +88,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const addItem = useCartStore((state) => state.addItem);
   const updateItem = useCartStore((state) => state.updateItem);
   const removeItem = useCartStore((state) => state.removeItem);
+  const openCart = useCartStore((state) => state.openCart);
 
   const [addingToCart, setAddingToCart] = useState(false);
   const [activeColorIndex, setActiveColorIndex] = useState(0);
   const [imgError, setImgError] = useState(false);
   const [localWishlisted, setLocalWishlisted] = useState(isWishlisted);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
+  const [selectedSize, setSelectedSize] = useState('40R');
+  const [quickViewImageIdx, setQuickViewImageIdx] = useState(0);
 
   const productId = String(product._id || product.id || '');
   const productSlug = product.slug || productId;
@@ -171,7 +177,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     try {
       setAddingToCart(true);
       await addItem({ productId, quantity: 1 });
-      toast('success', 'Added to Cart', `${product.name} added to bag.`);
+      toast('success', 'Added to Cart', `${product.name} added to bag.`, {
+        label: 'View Bag',
+        onClick: openCart,
+      });
     } catch (err: any) {
       toast('error', 'Failed to Add', err?.message || 'Could not add item to bag.');
     } finally {
@@ -226,6 +235,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const displayedPrimaryUrl = (!imgError && colorSpecificImage) || (!imgError && primaryUrl) ? (colorSpecificImage || primaryUrl) : fallbackImgUrl;
 
+  const allProductImgUrls = rawImages.map((img) => typeof img === 'string' ? img : img.url).filter(Boolean);
+  const galleryList = allProductImgUrls.length > 0 ? allProductImgUrls : [displayedPrimaryUrl, fallbackImages[0], fallbackImages[1]];
+
+  const isCustomizable = product.isCustomizable === true;
+
   return (
     <div className={`group relative flex flex-col font-sans transition-all duration-500 ${className}`}>
       {/* 3D Depth Card Container */}
@@ -250,36 +264,42 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
 
           {/* Top Right Floating Circular 3D Glass Actions */}
-          <div className="flex flex-col gap-2.5 z-30 pointer-events-auto">
+          <div className="flex flex-col gap-2.5 z-30 pointer-events-auto transition-all duration-300 transform sm:opacity-0 sm:group-hover:opacity-100 opacity-100 sm:translate-x-2 sm:group-hover:translate-x-0">
             {/* Wishlist Heart */}
             <button
               type="button"
               onClick={handleWishlistClick}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-slate-700 hover:text-rose-500 transition-all cursor-pointer"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-slate-700 hover:text-rose-500 transition-all cursor-pointer"
               title="Save to Wishlist"
             >
               <Heart className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${localWishlisted ? 'fill-rose-500 text-rose-500' : 'stroke-[2.2]'}`} />
             </button>
 
-            {/* Customize Studio */}
-            <RouterLink
-              to={`${targetUrl}?customize=true`}
-              onClick={(e) => e.stopPropagation()}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-amber-600 hover:text-amber-500 transition-all cursor-pointer"
-              title="Customize Studio 3D"
-            >
-              <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
-            </RouterLink>
+            {/* Customize Studio (ONLY SHOWN IF CUSTOMIZATION IS ENABLED BY ADMIN) */}
+            {isCustomizable && (
+              <RouterLink
+                to={`${targetUrl}?customize=true`}
+                onClick={(e) => e.stopPropagation()}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-amber-600 hover:text-amber-500 transition-all cursor-pointer"
+                title="Customize Studio 3D"
+              >
+                <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
+              </RouterLink>
+            )}
 
-            {/* Quick View Eye */}
-            <RouterLink
-              to={targetUrl}
-              onClick={(e) => e.stopPropagation()}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-slate-700 hover:text-slate-950 transition-all cursor-pointer"
-              title="Quick View"
+            {/* Quick View Eye Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsQuickViewOpen(true);
+              }}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 backdrop-blur-xl border border-white shadow-md hover:shadow-lg hover:scale-110 active:scale-95 flex items-center justify-center text-slate-700 hover:text-amber-700 transition-all cursor-pointer"
+              title="Quick View Modal"
             >
               <Eye className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
-            </RouterLink>
+            </button>
           </div>
         </div>
 
@@ -307,7 +327,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </RouterLink>
 
         {/* Bottom Floating 3D Add to Cart Button Container */}
-        <div className="w-full z-20 pt-2">
+        <div className="w-full z-20 pt-2 transition-all duration-300 transform sm:opacity-95 opacity-100 sm:translate-y-1 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
           {cartQuantity > 0 ? (
             <div className="w-full bg-slate-950 text-white rounded-full py-2.5 px-4 shadow-xl flex items-center justify-between border border-slate-800/80 backdrop-blur-md">
               <button
@@ -427,7 +447,134 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
       </div>
+
+      {/* Inline Quick View Modal */}
+      <Modal
+        isOpen={isQuickViewOpen}
+        onClose={() => setIsQuickViewOpen(false)}
+        maxWidth="xl"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-start">
+          {/* Left Column: Gallery Slider */}
+          <div className="space-y-3">
+            <div className="aspect-[3/4] w-full rounded-2xl overflow-hidden bg-slate-100 border border-slate-200/80 shadow-xs relative">
+              <img
+                src={galleryList[quickViewImageIdx] || displayedPrimaryUrl}
+                alt={product.name}
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute top-3 left-3 bg-slate-950/80 text-amber-300 text-[10px] font-mono font-bold px-2.5 py-1 rounded-full backdrop-blur-md">
+                Quick Inspection
+              </div>
+            </div>
+            {/* Gallery Thumbnails */}
+            {galleryList.length > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {galleryList.map((url, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setQuickViewImageIdx(idx)}
+                    className={`w-14 h-18 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                      quickViewImageIdx === idx ? 'border-amber-600 ring-2 ring-amber-600/30 scale-105' : 'border-slate-200 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={url} alt="thumbnail" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Product Breakdown & Instant Actions */}
+          <div className="space-y-4">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-widest text-amber-700 font-mono">
+                {typeof product.category === 'object' ? product.category.name : product.category || 'Atelier Collection'}
+              </span>
+              <h2 className="text-2xl font-serif font-bold text-slate-950 mt-1">{product.name}</h2>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center text-amber-400">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <span className="text-xs font-semibold text-slate-600">{product.rating || '4.9'} (128 Reviews)</span>
+              </div>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-slate-950">
+                {currencySymbol}{product.basePrice.toFixed(2)}
+              </span>
+              {hasDiscount && (
+                <span className="text-base text-slate-400 line-through">
+                  {currencySymbol}{comparePrice.toFixed(2)}
+                </span>
+              )}
+            </div>
+
+            {/* Fabric Composition & Fit */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
+                <ShieldCheck className="w-4 h-4 text-amber-600" />
+                Fabric & Tailoring Specifications
+              </div>
+              <p className="text-xs text-slate-700 leading-relaxed font-sans">
+                {product.fabricComposition || 'Crafted from 100% Super 150s Italian Merino Wool sourced from heritage Biella mills. Tailored silhouette with anatomical shoulder canvas.'}
+              </p>
+            </div>
+
+            {/* Sizes */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-800 uppercase tracking-wide">Select Jacket Size:</label>
+              <div className="flex items-center gap-2">
+                {['38R', '40R', '42R', '44R', '46R'].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setSelectedSize(size)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                      selectedSize === size
+                        ? 'bg-slate-950 text-white border-slate-950 shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={async (e) => {
+                  await handleQuickAddToCart(e);
+                  setIsQuickViewOpen(false);
+                }}
+                disabled={addingToCart}
+                className="w-full py-3.5 px-6 rounded-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>{addingToCart ? 'Adding to Bag...' : 'Add to Shopping Bag'}</span>
+              </button>
+
+              <RouterLink
+                to={targetUrl}
+                onClick={() => setIsQuickViewOpen(false)}
+                className="w-full py-3 px-6 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs text-center block transition-colors cursor-pointer"
+              >
+                {isCustomizable ? 'View Complete Product Details & 3D Customizer →' : 'View Complete Details →'}
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
+
 

@@ -82,6 +82,11 @@ export function AdminProductsPage() {
     isDeal: false,
     tags: [] as string[],
     sizes: [] as string[],
+    showSizeChart: true,
+    sizeChartType: 'suits' as 'suits' | 'shirts' | 'trousers',
+    returnPolicy: '30-Day Hassle-Free Returns & Perfect Fit Guarantee',
+    guaranteeDetails: 'Every garment is backed by our 100% Fit Guarantee. Free alterations within 30 days.',
+    productDetailsSections: [] as Array<{ id?: string; title: string; content: string }>,
     simpleVariants: [] as Array<{ name?: string; colorName?: string; sizeName?: string; sku?: string; stockQuantity: number; inStock: boolean }>,
     colors: [] as Array<{ name: string; hex: string; image?: string; images?: Array<string | { url: string; altText?: string }> }>,
     images: [] as { url: string; altText?: string; isPrimary?: boolean; isHover?: boolean }[],
@@ -152,6 +157,11 @@ export function AdminProductsPage() {
       isDeal: false,
       tags: [],
       sizes: ['S', 'M', 'L', 'XL'],
+      showSizeChart: true,
+      sizeChartType: 'suits',
+      returnPolicy: '30-Day Hassle-Free Returns & Perfect Fit Guarantee',
+      guaranteeDetails: 'Every garment is backed by our 100% Fit Guarantee. Free alterations within 30 days.',
+      productDetailsSections: [],
       simpleVariants: [],
       colors: [
         { name: 'Navy Blue', hex: '#1c2536', image: '' },
@@ -222,6 +232,11 @@ export function AdminProductsPage() {
       isDeal: (product as any).isDeal || false,
       tags: (product as any).tags || (product as any).customSections || [],
       sizes: (product as any).sizes || ['S', 'M', 'L', 'XL'],
+      showSizeChart: product.showSizeChart ?? true,
+      sizeChartType: (product.sizeChartType as any) || 'suits',
+      returnPolicy: product.returnPolicy || '30-Day Hassle-Free Returns & Perfect Fit Guarantee',
+      guaranteeDetails: product.guaranteeDetails || 'Every garment is backed by our 100% Fit Guarantee. Free alterations within 30 days.',
+      productDetailsSections: (product as any).productDetailsSections || [],
       simpleVariants: (product as any).simpleVariants || [],
       colors: parsedColors,
       images:
@@ -1347,6 +1362,147 @@ export function AdminProductsPage() {
                     )}
                   </div>
                 )}
+
+                {/* SIZE CHART & RETURN POLICY CONFIGURATION CARD */}
+                <div className="pt-6 border-t border-slate-200 space-y-6 bg-slate-50/70 p-6 rounded-2xl border border-slate-200/90">
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2 font-serif">
+                      <Shirt className="w-4 h-4 text-amber-600" />
+                      Size Chart, 30-Day Return Policy & Custom Details Sections
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Configure size guide visibility, return policy terms, and custom information tabs for this garment.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-xl border border-slate-200">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.showSizeChart}
+                        onChange={(e) => setFormData({ ...formData, showSizeChart: e.target.checked })}
+                        className="w-5 h-5 text-amber-600 rounded"
+                      />
+                      <div>
+                        <span className="font-bold text-xs text-slate-900 block">Show Size Chart Button on Product Page</span>
+                        <span className="text-[11px] text-slate-500">Exposes the interactive size & measurement modal.</span>
+                      </div>
+                    </label>
+
+                    <Select
+                      label="Size Chart Template Category"
+                      value={formData.sizeChartType}
+                      onChange={(e) => setFormData({ ...formData, sizeChartType: e.target.value as any })}
+                      options={[
+                        { value: 'suits', label: 'Suits, Blazers & Tuxedos' },
+                        { value: 'shirts', label: 'Dress Shirts & Casual Tops' },
+                        { value: 'trousers', label: 'Trousers, Pants & Chinos' },
+                      ]}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Input
+                      label="30-Day Return Policy Headline"
+                      value={formData.returnPolicy}
+                      onChange={(e) => setFormData({ ...formData, returnPolicy: e.target.value })}
+                      placeholder="e.g. 30-Day Risk-Free Returns & Exchange"
+                    />
+
+                    <Input
+                      label="100% Fit Guarantee Details"
+                      value={formData.guaranteeDetails}
+                      onChange={(e) => setFormData({ ...formData, guaranteeDetails: e.target.value })}
+                      placeholder="e.g. Backed by our 100% Fit Guarantee with up to $75 tailoring credit."
+                    />
+                  </div>
+
+                  {/* Dynamic Product Details Sections Editor */}
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                          Custom Garment Information Tabs
+                        </h5>
+                        <p className="text-[11px] text-slate-500">
+                          Add custom sections (e.g. "Fabric Origin", "Customization Notes", "Alteration Policy") to appear on the product details page.
+                        </p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            productDetailsSections: [
+                              ...formData.productDetailsSections,
+                              { title: 'New Garment Section', content: 'Detailed information regarding this garment.' },
+                            ],
+                          })
+                        }
+                        leftIcon={<Plus className="w-4 h-4" />}
+                      >
+                        Add Custom Section
+                      </Button>
+                    </div>
+
+                    {formData.productDetailsSections.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic bg-white p-4 rounded-xl border border-dashed border-slate-200 text-center">
+                        No custom detail sections added yet. Click "Add Custom Section" above to create product detail tabs.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {formData.productDetailsSections.map((sec, secIdx) => (
+                          <div key={secIdx} className="p-4 bg-white rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <Input
+                                label={`Section #${secIdx + 1} Title`}
+                                value={sec.title}
+                                onChange={(e) => {
+                                  const updated = [...formData.productDetailsSections];
+                                  updated[secIdx].title = e.target.value;
+                                  setFormData({ ...formData, productDetailsSections: updated });
+                                }}
+                                placeholder="e.g. Italian Fabric Origin"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = formData.productDetailsSections.filter((_, i) => i !== secIdx);
+                                  setFormData({ ...formData, productDetailsSections: updated });
+                                }}
+                                className="p-2 text-slate-400 hover:text-red-600 rounded hover:bg-slate-100 transition-colors mt-6"
+                                title="Delete section"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                                Section Content / Body Text
+                              </label>
+                              <textarea
+                                value={sec.content}
+                                onChange={(e) => {
+                                  const updated = [...formData.productDetailsSections];
+                                  updated[secIdx].content = e.target.value;
+                                  setFormData({ ...formData, productDetailsSections: updated });
+                                }}
+                                rows={3}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:bg-white focus:outline-none"
+                                placeholder="Enter detailed text for this tab section..."
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1696,89 +1852,6 @@ export function AdminProductsPage() {
             </div>
           </div>
         </form>
-
-        {/* Modal for Creating / Editing Dynamic Showcase Sections */}
-        {showSectionModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-serif font-bold text-lg text-slate-900 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-600" />
-                  {editingSection ? 'Edit Showcase Section' : 'Create New Showcase Section'}
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setShowSectionModal(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveSection} className="space-y-4">
-                <Input
-                  label="Section Title (e.g. Diwali Sale) *"
-                  value={sectionForm.name}
-                  onChange={(e) => {
-                    const name = e.target.value;
-                    const code = name.toLowerCase().replace(/[^a-z0-9_]+/g, '_');
-                    setSectionForm({
-                      ...sectionForm,
-                      name,
-                      code: editingSection ? sectionForm.code : code,
-                      badgeText: editingSection ? sectionForm.badgeText : name,
-                    });
-                  }}
-                  placeholder="e.g. Diwali Sale"
-                  required
-                />
-
-                <Input
-                  label="System Identifier / Tag Code *"
-                  value={sectionForm.code}
-                  onChange={(e) =>
-                    setSectionForm({
-                      ...sectionForm,
-                      code: e.target.value.toLowerCase().replace(/[^a-z0-9_]+/g, '_'),
-                    })
-                  }
-                  placeholder="e.g. diwali_sale"
-                  required
-                />
-
-                <Input
-                  label="Product Card Badge Text *"
-                  value={sectionForm.badgeText}
-                  onChange={(e) => setSectionForm({ ...sectionForm, badgeText: e.target.value })}
-                  placeholder="e.g. Diwali Special"
-                  required
-                />
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Section Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={sectionForm.description}
-                    onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })}
-                    placeholder="e.g. Festive promotional deals and exclusive bespoke tailoring"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
-                  />
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowSectionModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" variant="gold" size="sm" leftIcon={<Save className="w-4 h-4" />}>
-                    {editingSection ? 'Update Section' : 'Create Section'}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     );
   }

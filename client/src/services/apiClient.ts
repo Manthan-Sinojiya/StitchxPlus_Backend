@@ -115,11 +115,13 @@ export async function apiClient<T>(
     }
 
     // Automatic token refresh on HTTP 401
+    // Skip refresh entirely if: already retrying, it's an auth endpoint, or user has no token (guest session)
     if (
       response.status === 401 &&
       !isRetry &&
       !endpoint.includes('/auth/login') &&
-      !endpoint.includes('/auth/refresh')
+      !endpoint.includes('/auth/refresh') &&
+      !!useAuthStore.getState().accessToken
     ) {
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {

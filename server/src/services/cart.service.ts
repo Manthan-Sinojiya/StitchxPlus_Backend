@@ -69,6 +69,8 @@ export class CartService {
         priceAtAddition: item.priceAtAddition,
         unitPrice,
         totalPrice: itemTotal,
+        selectedColor: item.selectedColor,
+        selectedSize: item.selectedSize,
         customization: calculatedCustomization,
         measurementProfile: item.measurementProfile,
       });
@@ -156,9 +158,16 @@ export class CartService {
 
     const cart = await this.cartRepository.findOrCreateCart(userId, sessionId);
 
-    // Check if matching item exists (same productId + customization + measurement)
+    // Check if matching item exists (same productId + color + size + customization + measurement)
     const existingIndex = cart.items.findIndex((item: any) => {
       if (item.productId.toString() !== input.productId) return false;
+      const colorA = item.selectedColor?.name || '';
+      const colorB = input.selectedColor?.name || (typeof input.selectedColor === 'string' ? input.selectedColor : '');
+      if (colorA !== colorB) return false;
+      const sizeA = item.selectedSize || '';
+      const sizeB = input.selectedSize || '';
+      if (sizeA !== sizeB) return false;
+
       const optsA = item.customization?.selectedOptions || {};
       const optsB = input.customization?.selectedOptions || {};
       if (JSON.stringify(optsA) !== JSON.stringify(optsB)) return false;
@@ -177,6 +186,8 @@ export class CartService {
         productId: product._id,
         quantity,
         priceAtAddition: unitPrice,
+        selectedColor: typeof input.selectedColor === 'string' ? { name: input.selectedColor } : input.selectedColor,
+        selectedSize: input.selectedSize,
         customization: customizationData,
         measurementProfile: input.measurementProfile,
       } as any);

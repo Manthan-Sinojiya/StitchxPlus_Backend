@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -12,6 +12,8 @@ export interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md' }: ModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -22,6 +24,10 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
+      // Focus modal container for accessibility
+      setTimeout(() => {
+        modalRef.current?.focus();
+      }, 50);
     }
 
     return () => {
@@ -44,26 +50,28 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-charcoal-950/40 backdrop-blur-xs transition-opacity animate-fade-in"
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
       <div
+        ref={modalRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
         className={cn(
-          'relative w-full bg-white rounded-2xl shadow-modal border border-charcoal-200/80 z-10 overflow-hidden transform transition-all animate-scale-up',
+          'relative w-full bg-white rounded-3xl shadow-2xl border border-slate-200/80 z-10 overflow-hidden transform transition-all animate-scale-up outline-none',
           maxWidths[maxWidth],
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-charcoal-100 bg-cream-50/50">
-          {title && <h3 id="modal-title" className="text-lg font-bold text-charcoal-950 font-heading">{title}</h3>}
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 bg-slate-50/60">
+          {title && <h3 id="modal-title" className="text-lg font-bold text-slate-950 font-serif">{title}</h3>}
           <button
             onClick={onClose}
-            className="text-charcoal-400 hover:text-charcoal-800 p-1.5 rounded-lg hover:bg-cream-100 transition-colors ml-auto focus-visible:ring-2 focus-visible:ring-bronze-500"
+            className="text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-slate-200/70 transition-colors ml-auto cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -75,7 +83,7 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-charcoal-100 bg-cream-50/30">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/40">
             {footer}
           </div>
         )}
@@ -83,3 +91,4 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md
     </div>
   );
 }
+

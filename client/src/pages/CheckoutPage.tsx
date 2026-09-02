@@ -197,8 +197,10 @@ export const CheckoutPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <>
       <SEOHead title="Checkout | Stitchx Plus LLC" description="Secure Bespoke Suit Checkout" />
+
+      <div className="space-y-6 sm:space-y-8">
 
       {/* Header & Steps Breadcrumb */}
       <div className="space-y-4">
@@ -630,5 +632,6 @@ export const CheckoutPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };

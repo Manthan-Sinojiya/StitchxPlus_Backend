@@ -36,7 +36,7 @@ export function Accordion({
   return (
     <div
       className={cn(
-        'divide-y divide-charcoal-100 border border-charcoal-200/70 rounded-2xl bg-white shadow-subtle overflow-hidden',
+        'divide-y divide-slate-200/80 border border-slate-200/90 rounded-3xl bg-white shadow-xs overflow-hidden',
         className,
       )}
     >
@@ -46,25 +46,29 @@ export function Accordion({
           <div key={item.id} className="transition-colors">
             <button
               onClick={() => toggleItem(item.id)}
-              className="w-full flex items-center justify-between p-5 text-left font-semibold text-charcoal-950 hover:bg-cream-50/70 transition-colors focus:outline-none"
+              className="w-full flex items-center justify-between p-5 text-left font-semibold text-slate-950 hover:bg-slate-50/70 transition-colors focus:outline-none cursor-pointer"
               aria-expanded={isExpanded}
             >
-              <span className="text-base font-heading">{item.title}</span>
+              <span className="text-base font-serif font-bold text-slate-900">{item.title}</span>
               <ChevronDown
                 className={cn(
-                  'w-5 h-5 text-bronze-600 transition-transform duration-300 shrink-0 ml-4',
+                  'w-5 h-5 text-amber-600 transition-transform duration-300 shrink-0 ml-4',
                   isExpanded && 'rotate-180',
                 )}
               />
             </button>
-            {isExpanded && (
-              <div className="px-5 pb-5 text-sm text-charcoal-700 leading-relaxed animate-fade-in border-t border-charcoal-100 pt-3">
-                {item.content}
-              </div>
-            )}
+            <div
+              className={cn(
+                'grid transition-all duration-300 ease-in-out text-sm text-slate-600 leading-relaxed',
+                isExpanded ? 'grid-rows-[1fr] opacity-100 px-5 pb-5 pt-1 border-t border-slate-100' : 'grid-rows-[0fr] opacity-0 px-5 overflow-hidden',
+              )}
+            >
+              <div className="overflow-hidden">{item.content}</div>
+            </div>
           </div>
         );
       })}
     </div>
   );
 }
+

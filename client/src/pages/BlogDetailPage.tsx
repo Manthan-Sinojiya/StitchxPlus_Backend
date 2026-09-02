@@ -78,13 +78,7 @@ export const BlogDetailPage: React.FC = () => {
         ogImage={blog.image}
       />
 
-      <SEOHead
-        title={`${blog.title} | The Atelier Journal | Stitchx Plus`}
-        description={blog.excerpt || blog.title}
-        ogImage={blog.image}
-      />
-
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
         {/* Standardized Header & Breadcrumb Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-charcoal-200/70 pb-5">
           <nav className="text-xs font-semibold text-charcoal-500 uppercase tracking-wider flex items-center gap-2">

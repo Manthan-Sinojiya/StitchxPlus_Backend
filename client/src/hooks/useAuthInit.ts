@@ -9,6 +9,14 @@ export function useAuthInit() {
     let isMounted = true;
 
     async function initAuth() {
+      const hasToken = typeof window !== 'undefined' && Boolean(localStorage.getItem('stitchx_access_token'));
+      if (!hasToken) {
+        if (isMounted) {
+          clearAuth();
+          setLoading(false);
+        }
+        return;
+      }
       try {
         const response = await authService.refreshToken();
         if (isMounted && response.success && response.data) {

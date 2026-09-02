@@ -122,7 +122,7 @@ export function CollectionsPage() {
   ];
 
   return (
-    <div className="space-y-10">
+    <>
       <SEOHead
         title="Bespoke Suits & Menswear Collections | Stitchx Plus"
         description="Explore master-tailored garments ready for digital customization in your exact fit and Italian wool fabric preference."
@@ -131,6 +131,8 @@ export function CollectionsPage() {
           { name: 'Collections', url: 'https://stitchxplus.com/collections' },
         ]}
       />
+
+      <div className="space-y-6 sm:space-y-8">
 
       {/* Header & Breadcrumb */}
       <div className="space-y-3">
@@ -281,6 +283,7 @@ export function CollectionsPage() {
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       )}
     </div>
+    </>
   );
 }
 

@@ -279,19 +279,126 @@ export function AdminOrdersPage() {
 
             {/* Order Items Breakdown */}
             <div className="space-y-2">
-              <h5 className="font-bold text-slate-900">Commissions & Line Items</h5>
-              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-200">
-                {selectedOrder.items?.map((item: any, idx: number) => (
-                  <div key={idx} className="p-3 bg-white flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-slate-900">{item.product?.name || 'Bespoke Garment'}</span>
-                      <span className="block text-[11px] text-slate-500">
-                        Qty: {item.quantity} × ${item.price?.toFixed(2)} USD
-                      </span>
+              <h5 className="font-bold text-slate-900 text-sm font-serif">Commissions & Line Items Breakdown</h5>
+              <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-200">
+                {selectedOrder.items?.map((item: any, idx: number) => {
+                  const prodName = item.product?.name || item.name || 'Bespoke Garment';
+                  const isCustom = !!item.customization || !!item.measurementProfile;
+                  const unitPx = item.unitPrice || item.price || item.priceAtAddition || 0;
+                  const totalPx = item.totalPrice || unitPx * (item.quantity || 1);
+                  const colorName = item.selectedColor?.name || (typeof item.selectedColor === 'string' ? item.selectedColor : null);
+
+                  return (
+                    <div key={idx} className="p-4 bg-white space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">{prodName}</span>
+                            {isCustom ? (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                                ✨ Bespoke Customized
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                Standard Off-the-Rack
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-mono">
+                            SKU: {item.product?.sku || item.sku || 'STX-GARMENT'}
+                            {colorName ? ` | Color: ${colorName}` : ''}
+                            {item.selectedSize ? ` | Size: ${item.selectedSize}` : ''}
+                            {` | Qty: ${item.quantity || 1} × $${unitPx.toFixed(2)}`}
+                          </p>
+                        </div>
+
+                        <span className="font-bold font-mono text-slate-900 text-sm">${totalPx.toFixed(2)} USD</span>
+                      </div>
+
+                      {/* Bespoke Customization Options Breakdown */}
+                      {item.customization && (
+                        <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1.5 text-xs text-amber-950">
+                          <strong className="text-[11px] font-bold uppercase tracking-wider text-amber-800 block">
+                            ✂️ Admin Customization Selections:
+                          </strong>
+                          {item.customization.optionAdjustments && item.customization.optionAdjustments.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                              {item.customization.optionAdjustments.map((opt: any, oIdx: number) => (
+                                <div key={oIdx} className="bg-white p-2 rounded-lg border border-amber-200/80 flex items-center justify-between text-[11px]">
+                                  <span>
+                                    <strong className="text-amber-900">{opt.group}:</strong> {opt.optionName}
+                                  </span>
+                                  <span className="font-mono text-amber-700 font-semibold">
+                                    {opt.priceAdjustment > 0 ? `+$${opt.priceAdjustment}` : 'Incl.'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : item.customization.selectedOptions ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                              {Object.entries(item.customization.selectedOptions).map(([grp, val]: [string, any], oIdx: number) => (
+                                <div key={oIdx} className="bg-white p-2 rounded-lg border border-amber-200/80 text-[11px]">
+                                  <strong className="text-amber-900">{grp}:</strong> {val}
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+
+                      {/* Measurement Profile Breakdown */}
+                      {item.measurementProfile && (
+                        <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1.5 text-xs text-emerald-950">
+                          <strong className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 block">
+                            📏 Customer Measurement Profile ({item.measurementProfile.name || 'Fit Profile'}):
+                          </strong>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+                            {item.measurementProfile.chest && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Chest: <strong>{item.measurementProfile.chest} {item.measurementProfile.unit || 'in'}</strong>
+                              </div>
+                            )}
+                            {item.measurementProfile.waist && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Waist: <strong>{item.measurementProfile.waist} {item.measurementProfile.unit || 'in'}</strong>
+                              </div>
+                            )}
+                            {item.measurementProfile.shoulder && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Shoulder: <strong>{item.measurementProfile.shoulder} {item.measurementProfile.unit || 'in'}</strong>
+                              </div>
+                            )}
+                            {item.measurementProfile.sleeve && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Sleeve: <strong>{item.measurementProfile.sleeve} {item.measurementProfile.unit || 'in'}</strong>
+                              </div>
+                            )}
+                            {item.measurementProfile.jacketLength && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Length: <strong>{item.measurementProfile.jacketLength} {item.measurementProfile.unit || 'in'}</strong>
+                              </div>
+                            )}
+                            {item.measurementProfile.trouserWaist && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Pants Waist: <strong>{item.measurementProfile.trouserWaist} {item.measurementProfile.unit || 'in'}</strong>
+                              </div>
+                            )}
+                            {item.measurementProfile.inseam && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Inseam: <strong>{item.measurementProfile.inseam} {item.measurementProfile.unit || 'in'}</strong>
+                              </div>
+                            )}
+                            {item.measurementProfile.fitPreference && (
+                              <div className="p-1.5 bg-white rounded border border-emerald-200">
+                                Fit: <strong>{item.measurementProfile.fitPreference.toUpperCase()}</strong>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <span className="font-bold font-mono text-slate-900">${(item.quantity * item.price)?.toFixed(2)} USD</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

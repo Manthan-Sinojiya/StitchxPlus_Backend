@@ -158,6 +158,11 @@ export interface Product {
   customSections?: string[];
   rating: number;
   numReviews: number;
+  showSizeChart?: boolean;
+  sizeChartType?: string;
+  returnPolicy?: string;
+  guaranteeDetails?: string;
+  productDetailsSections?: Array<{ id?: string; title: string; content: string }>;
   seo?: ProductSEO;
   shipping?: ProductShipping;
   createdAt: string;

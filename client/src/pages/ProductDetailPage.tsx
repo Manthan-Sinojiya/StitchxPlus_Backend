@@ -17,8 +17,10 @@ import {
   ChevronLeft,
   Edit3,
   ZoomIn,
+  Ruler,
 } from 'lucide-react';
 import { Button, Badge, Tabs, useToast } from '../components/ui';
+import { SizeChartModal } from '../components/ui/SizeChartModal';
 import { useProductBySlug } from '../features/products/useProductQueries';
 import { ProductImageGallery } from '../features/products/ProductImageGallery';
 import { ShippingReturnInfo } from '../features/products/ShippingReturnInfo';
@@ -38,6 +40,7 @@ export function ProductDetailPage() {
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [notifyEmail, setNotifyEmail] = useState('');
   const [isNotified, setIsNotified] = useState(false);
+  const [isSizeChartOpen, setIsSizeChartOpen] = useState(false);
 
   // In-Page Customization Mode States
   const initialCustomizing = searchParams.get('customize') === 'true';
@@ -84,7 +87,7 @@ export function ProductDetailPage() {
 
   // Load options when customization mode is activated
   useEffect(() => {
-    if (product && product.isCustomizable === false) {
+    if (product && product.isCustomizable !== true) {
       if (isCustomizing) setIsCustomizing(false);
       return;
     }
@@ -365,7 +368,7 @@ export function ProductDetailPage() {
   const activeGroup = !isReviewStep ? customizationGroups[currentStepIndex] : null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-12">
+    <>
       {/* SEO & Structured Data */}
       <SEOHead
         title={isCustomizing ? `Customize ${product.name}` : product.name}
@@ -379,6 +382,8 @@ export function ProductDetailPage() {
           { name: product.name, url: `https://stitchxplus.com/product/${product.slug}` },
         ]}
       />
+
+      <div className="space-y-6 sm:space-y-8">
 
       {/* Top Banner Notice when Customizing Mode is Active */}
       {isCustomizing && (
@@ -1073,15 +1078,27 @@ export function ProductDetailPage() {
                 {product.inStock ? (
                   <>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider text-charcoal-700 block">
-                        Size & Fit Profile
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-charcoal-700 block">
+                          Size & Fit Profile
+                        </label>
+                        {product.showSizeChart !== false && (
+                          <button
+                            type="button"
+                            onClick={() => setIsSizeChartOpen(true)}
+                            className="text-xs font-bold text-bronze-700 hover:text-bronze-900 flex items-center gap-1.5 hover:underline transition-colors"
+                          >
+                            <Ruler className="w-3.5 h-3.5 text-bronze-600" />
+                            <span>Size & Measurement Guide</span>
+                          </button>
+                        )}
+                      </div>
                       <select
                         value={selectedSize}
                         onChange={(e) => setSelectedSize(e.target.value)}
                         className="w-full px-4 py-3 rounded-2xl border border-charcoal-200 text-sm focus:outline-none focus:ring-2 focus:ring-bronze-500 bg-white"
                       >
-                        {product.isCustomizable !== false && (
+                        {product.isCustomizable === true && (
                           <option value="custom">Use My Digital Fit Profile (Recommended)</option>
                         )}
                         {(Array.isArray(product.sizes) && product.sizes.length > 0
@@ -1177,7 +1194,10 @@ export function ProductDetailPage() {
               </div>
 
               {/* Shipping & Returns Accordion */}
-              <ShippingReturnInfo />
+              <ShippingReturnInfo
+                returnPolicy={product.returnPolicy}
+                guaranteeDetails={product.guaranteeDetails}
+              />
             </>
           )}
         </div>
@@ -1225,12 +1245,31 @@ export function ProductDetailPage() {
                 </div>
               ),
             },
+            ...(Array.isArray(product.productDetailsSections)
+              ? product.productDetailsSections.map((sec, idx) => ({
+                  id: sec.id || `custom-sec-${idx}`,
+                  label: sec.title,
+                  content: (
+                    <div className="pt-4 text-xs sm:text-sm text-charcoal-700 leading-relaxed whitespace-pre-line">
+                      {sec.content}
+                    </div>
+                  ),
+                }))
+              : []),
           ]}
         />
       </div>
 
       {/* Related Products Carousel */}
       <RelatedProductsSection currentProductIdOrSlug={product.id || product.slug} />
+
+      {/* Size & Measurement Guide Modal */}
+      <SizeChartModal
+        isOpen={isSizeChartOpen}
+        onClose={() => setIsSizeChartOpen(false)}
+        defaultCategory={product.sizeChartType || categoryName}
+      />
     </div>
+    </>
   );
 }

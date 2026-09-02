@@ -66,10 +66,9 @@ export const CartPage: React.FC = () => {
         description="Review your bespoke suit order, customized options, and measurement profiles."
       />
 
-      <div className="bg-slate-50 min-h-screen py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="mb-6">
             <h1 className="text-3xl font-serif font-bold text-navy-900">Your Bespoke Cart</h1>
             <p className="text-sm text-slate-500 mt-1">
               Review your customized suit configurations and measurement profiles before checkout.
@@ -361,7 +360,6 @@ export const CartPage: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
     </>
   );
 };

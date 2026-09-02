@@ -134,7 +134,7 @@ export function CustomizePage() {
       />
 
       {/* Header Banner */}
-      <header className="bg-navy-950 text-white border-b border-navy-800 py-5 px-4 shadow-lg sticky top-16 z-30 backdrop-blur-md bg-navy-950/95">
+      <header className="bg-navy-950 text-white border-b border-navy-800 py-4 px-4 shadow-lg sticky top-20 z-30 backdrop-blur-md bg-navy-950/95">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {targetProduct?.images && targetProduct.images.length > 0 && (
@@ -190,7 +190,7 @@ export function CustomizePage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <div className="space-y-6 py-4 sm:py-6">
         {/* Step Indicator Bar */}
         <div className="bg-white border border-navy-100 rounded-3xl p-4 sm:p-6 shadow-card space-y-4">
           <div className="flex items-center justify-between text-xs sm:text-sm">

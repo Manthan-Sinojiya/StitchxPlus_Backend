@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Tag as TagIcon, ChevronLeft, ChevronRight, Quote } from 'lucide-react';
 import { Badge, Accordion, Pagination } from '../components/ui';
@@ -170,7 +170,7 @@ export function HomePage() {
   }, []);
 
   // Helper to compute exact product count for a root category/department
-  const getCategoryProductCount = (rootCat: Category): number => {
+  const getCategoryProductCount = useCallback((rootCat: Category): number => {
     if (typeof (rootCat as any).productCount === 'number') {
       return (rootCat as any).productCount;
     }
@@ -226,36 +226,38 @@ export function HomePage() {
         (pParentCatSlug && matchingCatSlugs.has(pParentCatSlug))
       );
     }).length;
-  };
+  }, [allProducts, allCategories]);
 
-  // Filter product cards based on active tab
-  const rawProducts = fetchedProducts;
-  const filteredShowcaseProducts = rawProducts.filter((p: any) => {
-    if (p.status && p.status !== 'active') return false;
+  // Filter product cards based on active tab — memoized to avoid re-filtering on every render
+  const filteredShowcaseProducts = useMemo(() => {
+    return fetchedProducts.filter((p: any) => {
+      if (p.status && p.status !== 'active') return false;
 
-    const tags = Array.isArray(p.tags) ? p.tags : (Array.isArray(p.customSections) ? p.customSections : []);
-    const collections = Array.isArray(p.collections) ? p.collections : [];
+      const tags = Array.isArray(p.tags) ? p.tags : (Array.isArray(p.customSections) ? p.customSections : []);
+      const collections = Array.isArray(p.collections) ? p.collections : [];
 
-    if (activeTab === 'new') {
-      return p.isNew === true || tags.includes('new') || tags.includes('new-arrivals') || collections.includes('new');
-    }
-    if (activeTab === 'bestsellers') {
-      return p.isFeatured === true || tags.includes('bestseller') || tags.includes('bestsellers') || collections.includes('bestsellers');
-    }
-    if (activeTab === 'sale') {
-      return p.isOnSale === true || p.isSale === true || (typeof p.compareAtPrice === 'number' && p.compareAtPrice > p.basePrice) || tags.includes('sale') || collections.includes('sale');
-    }
-    if (activeTab === 'deals') {
-      return p.isDeal === true || tags.includes('deal') || tags.includes('deals') || collections.includes('deals');
-    }
+      if (activeTab === 'new') {
+        return p.isNew === true || tags.includes('new') || tags.includes('new-arrivals') || collections.includes('new');
+      }
+      if (activeTab === 'bestsellers') {
+        return p.isFeatured === true || tags.includes('bestseller') || tags.includes('bestsellers') || collections.includes('bestsellers');
+      }
+      if (activeTab === 'sale') {
+        return p.isOnSale === true || p.isSale === true || (typeof p.compareAtPrice === 'number' && p.compareAtPrice > p.basePrice) || tags.includes('sale') || collections.includes('sale');
+      }
+      if (activeTab === 'deals') {
+        return p.isDeal === true || tags.includes('deal') || tags.includes('deals') || collections.includes('deals');
+      }
 
-    // Filter by custom section code or tag
-    return tags.includes(activeTab) || collections.includes(activeTab);
-  });
+      // Filter by custom section code or tag
+      return tags.includes(activeTab) || collections.includes(activeTab);
+    });
+  }, [fetchedProducts, activeTab]);
 
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categoryScrollRef.current) {
-      const scrollAmount = direction === 'left' ? -320 : 320;
+      const containerWidth = categoryScrollRef.current.clientWidth;
+      const scrollAmount = direction === 'left' ? -containerWidth : containerWidth;
       categoryScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -525,7 +527,7 @@ export function HomePage() {
                       key={cat.id || (cat as any)._id}
                       to={`/collections?category=${cat.slug}`}
                       className={`group relative rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 transform hover:-translate-y-1.5 cursor-pointer border border-slate-200/80 aspect-[4/5] flex flex-col justify-end bg-slate-950 ${isScrollableCategories
-                        ? 'w-[280px] sm:w-[300px] lg:w-[310px] shrink-0 snap-start'
+                        ? 'w-[85%] sm:w-[calc((100%-1.5rem)/2)] md:w-[calc((100%-2*1.5rem)/3)] lg:w-[calc((100%-3*1.5rem)/4)] shrink-0 snap-start'
                         : ''
                         }`}
                     >
@@ -574,7 +576,7 @@ export function HomePage() {
       case 'custom_promo':
         return (
           <section key={sectionItem.id} className="max-w-7xl mx-auto px-[8px] py-6">
-            <div className="relative rounded-3xl overflow-hidden bg-slate-950 text-white min-h-[320px] flex flex-col justify-center p-8 sm:p-12 border border-amber-500/20 shadow-xl">
+            <div className="relative rounded-2xl overflow-hidden bg-slate-950 text-white min-h-[320px] flex flex-col justify-center p-8 sm:p-12 border border-amber-500/20 shadow-xl">
               {sectionItem.bannerImage && (
                 <img
                   src={sectionItem.bannerImage}
@@ -642,30 +644,30 @@ export function HomePage() {
               items={
                 faqItems && Array.isArray(faqItems) && faqItems.length > 0
                   ? faqItems.map((item) => ({
-                      id: item.id,
-                      title: item.question,
-                      content: item.answer,
-                    }))
+                    id: item.id,
+                    title: item.question,
+                    content: item.answer,
+                  }))
                   : [
-                      {
-                        id: 'faq-1',
-                        title: 'How accurate is the digital pattern measurement system?',
-                        content:
-                          'Our digital fit algorithm asks 6 key physical metrics and calculates over 30 micro-body variables with 99.4% tailor accuracy.',
-                      },
-                      {
-                        id: 'faq-2',
-                        title: 'What fabrics do you source?',
-                        content:
-                          'We exclusively partner with heritage mills in Biella and Como, Italy including Loro Piana, Vitale Barberis Canonico, and Dormeuil.',
-                      },
-                      {
-                        id: 'faq-3',
-                        title: 'What if my suit needs minor adjustments?',
-                        content:
-                          'We cover up to $75 in local tailoring credits or provide a complete free remake if your garment falls outside our Fit Guarantee.',
-                      },
-                    ]
+                    {
+                      id: 'faq-1',
+                      title: 'How accurate is the digital pattern measurement system?',
+                      content:
+                        'Our digital fit algorithm asks 6 key physical metrics and calculates over 30 micro-body variables with 99.4% tailor accuracy.',
+                    },
+                    {
+                      id: 'faq-2',
+                      title: 'What fabrics do you source?',
+                      content:
+                        'We exclusively partner with heritage mills in Biella and Como, Italy including Loro Piana, Vitale Barberis Canonico, and Dormeuil.',
+                    },
+                    {
+                      id: 'faq-3',
+                      title: 'What if my suit needs minor adjustments?',
+                      content:
+                        'We cover up to $75 in local tailoring credits or provide a complete free remake if your garment falls outside our Fit Guarantee.',
+                    },
+                  ]
               }
             />
           </section>

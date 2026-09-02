@@ -1,24 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Filter } from 'lucide-react';
 import {
   contentService,
   CMSCuratedCollectionSection,
   DEFAULT_CURATED_COLLECTION,
 } from '../../services/contentService';
 
+const FIT_FILTERS = ['All Styles', 'Bespoke Slim', 'Italian Classic', 'Black Tie Formal', 'Double-Breasted'];
+
 export const CuratedCollectionsSection: React.FC = () => {
   const [data, setData] = useState<CMSCuratedCollectionSection>(DEFAULT_CURATED_COLLECTION);
   const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [selectedFilter, setSelectedFilter] = useState<string>('All Styles');
+  const [loading, setLoading] = useState<boolean>(true);
 
   const loadContent = async () => {
     try {
+      setLoading(true);
       const res = await contentService.getCuratedCollectionContent();
       if (res && res.items && res.items.length > 0) {
         setData(res);
       }
     } catch (_err) {
       // Fallback already set
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -29,11 +36,37 @@ export const CuratedCollectionsSection: React.FC = () => {
     return () => window.removeEventListener('curated-collections-updated', handleUpdate);
   }, []);
 
+  if (loading) {
+    return (
+      <section className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4 animate-pulse">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="lg:col-span-5 order-2 lg:order-1">
+            <div className="aspect-[4/5] rounded-3xl bg-slate-200/80" />
+          </div>
+          <div className="lg:col-span-7 order-1 lg:order-2 space-y-4">
+            <div className="h-8 w-2/3 bg-slate-200/80 rounded-2xl" />
+            <div className="h-4 w-1/2 bg-slate-200/80 rounded-xl" />
+            <div className="space-y-3 pt-4">
+              <div className="h-16 w-full bg-slate-200/80 rounded-2xl" />
+              <div className="h-16 w-full bg-slate-200/80 rounded-2xl" />
+              <div className="h-16 w-full bg-slate-200/80 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (!data || !data.items || data.items.length === 0) return null;
 
-  // Clamp activeIndex if items changed dynamically
-  const safeActiveIndex = activeIndex < data.items.length ? activeIndex : 0;
-  const activeItem = data.items[safeActiveIndex] || data.items[0];
+  // Filter items by active filter tag if matching
+  const filteredItems = selectedFilter === 'All Styles'
+    ? data.items
+    : data.items.filter((item) => item.title.toLowerCase().includes(selectedFilter.toLowerCase()) || (item.description || '').toLowerCase().includes(selectedFilter.toLowerCase()));
+
+  const displayList = filteredItems.length > 0 ? filteredItems : data.items;
+  const safeActiveIndex = activeIndex < displayList.length ? activeIndex : 0;
+  const activeItem = displayList[safeActiveIndex] || displayList[0];
 
   return (
     <section className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4">
@@ -52,18 +85,19 @@ export const CuratedCollectionsSection: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
             <div className="absolute bottom-4 left-4 right-4 z-10 text-white/90 text-xs font-medium tracking-wide drop-shadow-sm flex items-center justify-between">
-              <span className="font-semibold text-amber-400 uppercase tracking-widest text-[10px]">
+              <span className="font-semibold text-amber-400 uppercase tracking-widest text-[10px] flex items-center gap-1">
+                <Sparkles className="w-3 h-3 fill-current" />
                 Featured Style #{safeActiveIndex + 1}
               </span>
-              <span>{activeItem.title}</span>
+              <span className="truncate max-w-[180px]">{activeItem.title}</span>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Title, Subtitle, Accordion Items & CTA */}
+        {/* Right Column: Title, Subtitle, Filter Pills, Accordion Items & CTA */}
         <div className="lg:col-span-7 order-1 lg:order-2 flex flex-col justify-center">
           {/* Section Header */}
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-4 sm:mb-6">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-slate-950 tracking-tight">
               {data.title || 'Curated Collections For Style'}
             </h2>
@@ -72,9 +106,31 @@ export const CuratedCollectionsSection: React.FC = () => {
             </p>
           </div>
 
+          {/* Interactive Fit & Fabric Filter Pills */}
+          <div className="mb-5 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <Filter className="w-4 h-4 text-amber-600 shrink-0 mr-1" />
+            {FIT_FILTERS.map((fit) => (
+              <button
+                key={fit}
+                type="button"
+                onClick={() => {
+                  setSelectedFilter(fit);
+                  setActiveIndex(0);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer border ${
+                  selectedFilter === fit
+                    ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-amber-400'
+                }`}
+              >
+                {fit}
+              </button>
+            ))}
+          </div>
+
           {/* Dynamic Interactive Accordions */}
           <div className="space-y-3">
-            {data.items.map((item, idx) => {
+            {displayList.map((item, idx) => {
               const isActive = idx === safeActiveIndex;
               return (
                 <div
@@ -141,3 +197,4 @@ export const CuratedCollectionsSection: React.FC = () => {
     </section>
   );
 };
+
