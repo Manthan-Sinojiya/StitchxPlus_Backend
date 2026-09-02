@@ -158,6 +158,168 @@ export interface CMSFAQItem {
   sortOrder?: number;
 }
 
+export interface CMSMeasurementMetric {
+  id: string;
+  key: string;
+  label: string;
+  description: string;
+  image?: string;
+}
+
+export interface CMSSizeChartCategory {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  bannerImage?: string;
+  columns: { key: string; label: string }[];
+  rows: Record<string, any>[];
+  metrics: CMSMeasurementMetric[];
+}
+
+export interface CMSSizeGuideData {
+  title: string;
+  subtitle: string;
+  defaultUnit: 'in' | 'cm';
+  categories: CMSSizeChartCategory[];
+}
+
+export const DEFAULT_SIZE_GUIDE_DATA: CMSSizeGuideData = {
+  title: 'Bespoke Size & Measurement Advisory',
+  subtitle: 'Master-tailored garment measurements with step-by-step visual guidance.',
+  defaultUnit: 'in',
+  categories: [
+    {
+      id: 'cat-suits',
+      slug: 'suits',
+      name: 'Suits & Blazers',
+      description: 'Standard sizing for Italian Wool Jackets, Tuxedos, and Blazers.',
+      bannerImage: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=1000&q=80',
+      columns: [
+        { key: 'size', label: 'Standard Size' },
+        { key: 'chest', label: 'Chest Circumference' },
+        { key: 'shoulder', label: 'Shoulder Width' },
+        { key: 'length', label: 'Jacket Length' },
+        { key: 'sleeve', label: 'Sleeve Length' },
+        { key: 'waist', label: 'Trouser Waist' },
+      ],
+      rows: [
+        { size: '36R (S)', chest: 37.5, shoulder: 17.5, length: 29.0, sleeve: 24.5, waist: 31.0 },
+        { size: '38R (M)', chest: 39.5, shoulder: 18.0, length: 29.5, sleeve: 25.0, waist: 33.0 },
+        { size: '40R (L)', chest: 41.5, shoulder: 18.5, length: 30.0, sleeve: 25.5, waist: 35.0 },
+        { size: '42R (XL)', chest: 43.5, shoulder: 19.0, length: 30.5, sleeve: 26.0, waist: 37.0 },
+        { size: '44R (XXL)', chest: 45.5, shoulder: 19.5, length: 31.0, sleeve: 26.5, waist: 39.0 },
+        { size: '46R (3XL)', chest: 47.5, shoulder: 20.0, length: 31.5, sleeve: 27.0, waist: 41.0 },
+      ],
+      metrics: [
+        {
+          id: 'm-chest',
+          key: 'chest',
+          label: 'Chest Size & Circumference',
+          description: 'Measure around the fullest part of your chest, keeping tape parallel to ground under the armpits.',
+          image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80',
+        },
+        {
+          id: 'm-shoulder',
+          key: 'shoulder',
+          label: 'Shoulder Width',
+          description: 'Measure from one shoulder point straight across the upper back bone to the opposite shoulder point.',
+          image: 'https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?auto=format&fit=crop&w=600&q=80',
+        },
+        {
+          id: 'm-waist',
+          key: 'waist',
+          label: 'Natural Waist Size',
+          description: 'Measure around the waistline where you naturally wear trousers (typically at navel level).',
+          image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+        },
+        {
+          id: 'm-sleeve',
+          key: 'sleeve',
+          label: 'Sleeve Length',
+          description: 'From shoulder seam down along the outer arm to your wrist bone.',
+          image: 'https://images.unsplash.com/photo-1598808503746-f34c53b9323e?auto=format&fit=crop&w=600&q=80',
+        },
+      ],
+    },
+    {
+      id: 'cat-shirts',
+      slug: 'shirts',
+      name: 'Dress Shirts',
+      description: 'Size chart for Egyptian Cotton & Formal Shirts.',
+      bannerImage: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=1000&q=80',
+      columns: [
+        { key: 'size', label: 'Shirt Size' },
+        { key: 'neck', label: 'Collar/Neck' },
+        { key: 'chest', label: 'Chest Circumference' },
+        { key: 'waist', label: 'Waist' },
+        { key: 'sleeve', label: 'Sleeve Length' },
+      ],
+      rows: [
+        { size: 'S (14.5)', neck: 14.5, chest: 38.0, waist: 34.0, sleeve: 33.0 },
+        { size: 'M (15.5)', neck: 15.5, chest: 41.0, waist: 37.0, sleeve: 34.0 },
+        { size: 'L (16.5)', neck: 16.5, chest: 44.0, waist: 40.0, sleeve: 35.0 },
+        { size: 'XL (17.5)', neck: 17.5, chest: 47.0, waist: 43.0, sleeve: 36.0 },
+        { size: 'XXL (18.5)', neck: 18.5, chest: 50.0, waist: 46.0, sleeve: 36.5 },
+      ],
+      metrics: [
+        {
+          id: 'm-neck',
+          key: 'neck',
+          label: 'Neck & Collar Size',
+          description: 'Measure around the neck base where shirt collar sits, leaving index finger inside tape for comfort.',
+          image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=80',
+        },
+        {
+          id: 'm-chest-shirt',
+          key: 'chest',
+          label: 'Chest Size',
+          description: 'Measure under arms around armpits over broad part of chest.',
+          image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80',
+        },
+      ],
+    },
+    {
+      id: 'cat-trousers',
+      slug: 'trousers',
+      name: 'Trousers & Slacks',
+      description: 'Dimensions for tailored suit trousers and formal slacks.',
+      bannerImage: 'https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&w=1000&q=80',
+      columns: [
+        { key: 'size', label: 'Waist Size' },
+        { key: 'waist', label: 'Natural Waist' },
+        { key: 'hip', label: 'Seat / Hips' },
+        { key: 'thigh', label: 'Thigh Width' },
+        { key: 'inseam', label: 'Standard Inseam' },
+      ],
+      rows: [
+        { size: '30W', waist: 30.0, hip: 38.0, thigh: 24.0, inseam: 32.0 },
+        { size: '32W', waist: 32.0, hip: 40.0, thigh: 25.0, inseam: 32.5 },
+        { size: '34W', waist: 34.0, hip: 42.0, thigh: 26.0, inseam: 33.0 },
+        { size: '36W', waist: 36.0, hip: 44.0, thigh: 27.0, inseam: 33.5 },
+        { size: '38W', waist: 38.0, hip: 46.0, thigh: 28.0, inseam: 34.0 },
+        { size: '40W', waist: 40.0, hip: 48.0, thigh: 29.0, inseam: 34.0 },
+      ],
+      metrics: [
+        {
+          id: 'm-waist-pants',
+          key: 'waist',
+          label: 'Trouser Waist',
+          description: 'Wrap measuring tape around natural waistline where trouser waistband sits.',
+          image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=600&q=80',
+        },
+        {
+          id: 'm-inseam',
+          key: 'inseam',
+          label: 'Inseam Length',
+          description: 'Measure along the inner leg seam from crotch down to desired shoe drop line.',
+          image: 'https://images.unsplash.com/photo-1479064555552-3ef4979f8908?auto=format&fit=crop&w=600&q=80',
+        },
+      ],
+    },
+  ],
+};
+
 export interface CMSPage {
   _id?: string;
   slug: string;
@@ -499,5 +661,36 @@ export const contentService = {
       await contentService.updateBlockContent('home_layout_sections', ordered);
     } catch (_e) {}
     window.dispatchEvent(new CustomEvent('home-layout-updated'));
+  },
+
+  getSizeGuideContent: async (): Promise<CMSSizeGuideData> => {
+    let data: CMSSizeGuideData | null = null;
+    try {
+      const block = await contentService.getBlockContent('size_guide');
+      if (block && Array.isArray(block.categories) && block.categories.length > 0) {
+        data = block;
+      }
+    } catch (_e) {}
+    if (!data) {
+      const saved = localStorage.getItem('stitchx_size_guide');
+      if (saved) {
+        try {
+          data = JSON.parse(saved);
+        } catch (_e) {}
+      }
+    }
+    if (!data || !data.categories || data.categories.length === 0) {
+      data = DEFAULT_SIZE_GUIDE_DATA;
+    }
+    localStorage.setItem('stitchx_size_guide', JSON.stringify(data));
+    return data;
+  },
+
+  saveSizeGuideContent: async (data: CMSSizeGuideData): Promise<void> => {
+    localStorage.setItem('stitchx_size_guide', JSON.stringify(data));
+    try {
+      await contentService.updateBlockContent('size_guide', data);
+    } catch (_e) {}
+    window.dispatchEvent(new CustomEvent('cms-size-guide-updated'));
   },
 };

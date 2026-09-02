@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { X, Ruler, Check, Info, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Ruler, Check, Info, ArrowRight, Sparkles, Scale, RefreshCw } from 'lucide-react';
 import { Button } from './Button';
+import { contentService, CMSSizeGuideData, CMSSizeChartCategory, DEFAULT_SIZE_GUIDE_DATA } from '../../services/contentService';
 
 interface SizeChartModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultCategory?: 'suits' | 'shirts' | 'trousers' | string;
+  defaultCategory?: string;
 }
 
 export const SizeChartModal: React.FC<SizeChartModalProps> = ({
@@ -13,121 +14,161 @@ export const SizeChartModal: React.FC<SizeChartModalProps> = ({
   onClose,
   defaultCategory = 'suits',
 }) => {
-  const [activeTab, setActiveTab] = useState<'suits' | 'shirts' | 'trousers'>(
-    defaultCategory.includes('shirt') ? 'shirts' : defaultCategory.includes('trouser') || defaultCategory.includes('pant') ? 'trousers' : 'suits'
-  );
+  const [guideData, setGuideData] = useState<CMSSizeGuideData>(DEFAULT_SIZE_GUIDE_DATA);
+  const [activeTabSlug, setActiveTabSlug] = useState<string>('suits');
   const [unit, setUnit] = useState<'in' | 'cm'>('in');
+  const [userChestVal, setUserChestVal] = useState<string>('');
+  const [recommendedSize, setRecommendedSize] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadGuideData();
+
+    const handleUpdate = () => {
+      loadGuideData();
+    };
+
+    window.addEventListener('cms-size-guide-updated', handleUpdate);
+    return () => {
+      window.removeEventListener('cms-size-guide-updated', handleUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!guideData || !guideData.categories || guideData.categories.length === 0) return;
+    const catMatch = guideData.categories.find(
+      (c) =>
+        c.slug.toLowerCase() === defaultCategory.toLowerCase() ||
+        c.name.toLowerCase().includes(defaultCategory.toLowerCase())
+    );
+    if (catMatch) {
+      setActiveTabSlug(catMatch.slug);
+    } else if (guideData.categories.length > 0) {
+      setActiveTabSlug(guideData.categories[0].slug);
+    }
+  }, [defaultCategory, guideData]);
+
+  const loadGuideData = async () => {
+    try {
+      const data = await contentService.getSizeGuideContent();
+      if (data && data.categories && data.categories.length > 0) {
+        setGuideData(data);
+        if (data.defaultUnit) setUnit(data.defaultUnit);
+      }
+    } catch (_e) {
+      setGuideData(DEFAULT_SIZE_GUIDE_DATA);
+    }
+  };
 
   if (!isOpen) return null;
 
-  // Conversion helper: 1 inch = 2.54 cm
-  const fmt = (valInches: number) => {
-    if (unit === 'cm') {
-      return (valInches * 2.54).toFixed(1);
+  const currentCategory: CMSSizeChartCategory =
+    guideData.categories.find((c) => c.slug === activeTabSlug) ||
+    guideData.categories[0] ||
+    DEFAULT_SIZE_GUIDE_DATA.categories[0];
+
+  // Helper for unit conversion (1 in = 2.54 cm)
+  const fmtVal = (val: any) => {
+    if (typeof val === 'number') {
+      if (unit === 'cm') return (val * 2.54).toFixed(1);
+      return val.toFixed(1);
     }
-    return valInches.toFixed(1);
+    return val;
   };
 
-  const suitSizes = [
-    { size: '36R (S)', chest: 37.5, shoulder: 17.5, length: 29.0, sleeve: 24.5, waist: 31.0 },
-    { size: '38R (M)', chest: 39.5, shoulder: 18.0, length: 29.5, sleeve: 25.0, waist: 33.0 },
-    { size: '40R (L)', chest: 41.5, shoulder: 18.5, length: 30.0, sleeve: 25.5, waist: 35.0 },
-    { size: '42R (XL)', chest: 43.5, shoulder: 19.0, length: 30.5, sleeve: 26.0, waist: 37.0 },
-    { size: '44R (XXL)', chest: 45.5, shoulder: 19.5, length: 31.0, sleeve: 26.5, waist: 39.0 },
-    { size: '46R (3XL)', chest: 47.5, shoulder: 20.0, length: 31.5, sleeve: 27.0, waist: 41.0 },
-  ];
+  // Interactive Size Estimator logic
+  const handleEstimateSize = (chestInput: string) => {
+    setUserChestVal(chestInput);
+    const num = parseFloat(chestInput);
+    if (!num || isNaN(num) || !currentCategory || !currentCategory.rows) {
+      setRecommendedSize(null);
+      return;
+    }
 
-  const shirtSizes = [
-    { size: 'S (14.5)', neck: 14.5, chest: 38.0, waist: 34.0, sleeve: 33.0 },
-    { size: 'M (15.5)', neck: 15.5, chest: 41.0, waist: 37.0, sleeve: 34.0 },
-    { size: 'L (16.5)', neck: 16.5, chest: 44.0, waist: 40.0, sleeve: 35.0 },
-    { size: 'XL (17.5)', neck: 17.5, chest: 47.0, waist: 43.0, sleeve: 36.0 },
-    { size: 'XXL (18.5)', neck: 18.5, chest: 50.0, waist: 46.0, sleeve: 36.5 },
-  ];
+    // Convert to inches for baseline check
+    const numInches = unit === 'cm' ? num / 2.54 : num;
+    let closestRow = currentCategory.rows[0];
+    let minDiff = 999;
 
-  const trouserSizes = [
-    { size: '30W', waist: 30.0, hip: 38.0, thigh: 24.0, inseam: 32.0 },
-    { size: '32W', waist: 32.0, hip: 40.0, thigh: 25.0, inseam: 32.5 },
-    { size: '34W', waist: 34.0, hip: 42.0, thigh: 26.0, inseam: 33.0 },
-    { size: '36W', waist: 36.0, hip: 44.0, thigh: 27.0, inseam: 33.5 },
-    { size: '38W', waist: 38.0, hip: 46.0, thigh: 28.0, inseam: 34.0 },
-    { size: '40W', waist: 40.0, hip: 48.0, thigh: 29.0, inseam: 34.0 },
-  ];
+    currentCategory.rows.forEach((row) => {
+      const chestVal = typeof row.chest === 'number' ? row.chest : parseFloat(row.chest || 0);
+      if (chestVal) {
+        const diff = Math.abs(chestVal - numInches);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestRow = row;
+        }
+      }
+    });
+
+    if (closestRow && closestRow.size) {
+      setRecommendedSize(String(closestRow.size));
+    } else {
+      setRecommendedSize(null);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white border border-charcoal-200 rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="p-6 bg-navy-950 text-white flex items-center justify-between border-b border-navy-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+      <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col shadow-2xl">
+        {/* Modal Header */}
+        <div className="p-5 sm:p-6 bg-slate-950 text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gold-500/20 border border-gold-400/40 flex items-center justify-center text-gold-400">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shrink-0">
               <Ruler className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-gold-400 block">
-                Bespoke Fit Advisory
+              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 block">
+                Storefront Size & Measurement Advisory
               </span>
-              <h2 className="text-xl font-bold font-serif">Size & Measurement Chart</h2>
+              <h2 className="text-lg sm:text-xl font-bold font-serif text-amber-100">
+                {guideData.title || 'Bespoke Size & Measurement Advisory'}
+              </h2>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-navy-900 text-slate-300 hover:text-white hover:bg-navy-800 flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-full bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center transition-all border border-slate-800"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Toolbar: Category Switcher & Unit Toggle */}
-        <div className="p-4 bg-cream-50/80 border-b border-charcoal-200 flex flex-wrap items-center justify-between gap-3">
+        {/* Toolbar: Category Selector & Unit Switcher */}
+        <div className="p-3 sm:p-4 bg-slate-50 border-b border-slate-200/90 flex flex-wrap items-center justify-between gap-3">
           {/* Category Tabs */}
-          <div className="flex items-center gap-1.5 bg-white p-1 rounded-2xl border border-charcoal-200">
-            <button
-              type="button"
-              onClick={() => setActiveTab('suits')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'suits'
-                  ? 'bg-navy-950 text-white shadow-sm'
-                  : 'text-charcoal-600 hover:text-charcoal-950'
-              }`}
-            >
-              Suits & Blazers
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('shirts')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'shirts'
-                  ? 'bg-navy-950 text-white shadow-sm'
-                  : 'text-charcoal-600 hover:text-charcoal-950'
-              }`}
-            >
-              Dress Shirts
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('trousers')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'trousers'
-                  ? 'bg-navy-950 text-white shadow-sm'
-                  : 'text-charcoal-600 hover:text-charcoal-950'
-              }`}
-            >
-              Trousers & Slacks
-            </button>
+          <div className="flex flex-wrap items-center gap-1.5 bg-white p-1 rounded-2xl border border-slate-200 shadow-2xs">
+            {guideData.categories.map((cat) => (
+              <button
+                key={cat.id || cat.slug}
+                type="button"
+                onClick={() => {
+                  setActiveTabSlug(cat.slug);
+                  setRecommendedSize(null);
+                }}
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTabSlug === cat.slug
+                    ? 'bg-slate-950 text-amber-300 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
           </div>
 
-          {/* Inches / CM Toggle */}
+          {/* Inches / CM Unit Switcher */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-charcoal-600 uppercase tracking-wider">Unit:</span>
-            <div className="flex items-center bg-white p-1 rounded-xl border border-charcoal-200">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+              <Scale className="w-3.5 h-3.5 text-amber-600" /> Unit:
+            </span>
+            <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
               <button
                 type="button"
                 onClick={() => setUnit('in')}
                 className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                  unit === 'in' ? 'bg-bronze-600 text-white' : 'text-charcoal-600 hover:text-charcoal-950'
+                  unit === 'in' ? 'bg-amber-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-950'
                 }`}
               >
                 Inches (in)
@@ -136,7 +177,7 @@ export const SizeChartModal: React.FC<SizeChartModalProps> = ({
                 type="button"
                 onClick={() => setUnit('cm')}
                 className={`px-3 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
-                  unit === 'cm' ? 'bg-bronze-600 text-white' : 'text-charcoal-600 hover:text-charcoal-950'
+                  unit === 'cm' ? 'bg-amber-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-950'
                 }`}
               >
                 Centimeters (cm)
@@ -145,143 +186,209 @@ export const SizeChartModal: React.FC<SizeChartModalProps> = ({
           </div>
         </div>
 
-        {/* Scrollable Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
-          {/* Table View */}
-          <div className="overflow-x-auto rounded-2xl border border-charcoal-200 bg-white">
-            {activeTab === 'suits' && (
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-navy-950 text-gold-300 font-serif text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th className="p-3.5 font-bold">Standard Size</th>
-                    <th className="p-3.5 font-bold">Chest Circumference ({unit})</th>
-                    <th className="p-3.5 font-bold">Shoulder Width ({unit})</th>
-                    <th className="p-3.5 font-bold">Jacket Length ({unit})</th>
-                    <th className="p-3.5 font-bold">Sleeve Length ({unit})</th>
-                    <th className="p-3.5 font-bold">Trouser Waist ({unit})</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-charcoal-100 text-charcoal-800">
-                  {suitSizes.map((row, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-cream-50/50'}>
-                      <td className="p-3.5 font-bold font-serif text-navy-950 text-sm">{row.size}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.chest)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.shoulder)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.length)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.sleeve)}</td>
-                      <td className="p-3.5 font-mono font-semibold text-bronze-700">{fmt(row.waist)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {activeTab === 'shirts' && (
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-navy-950 text-gold-300 font-serif text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th className="p-3.5 font-bold">Shirt Size</th>
-                    <th className="p-3.5 font-bold">Collar/Neck ({unit})</th>
-                    <th className="p-3.5 font-bold">Chest Circumference ({unit})</th>
-                    <th className="p-3.5 font-bold">Waist ({unit})</th>
-                    <th className="p-3.5 font-bold">Sleeve Length ({unit})</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-charcoal-100 text-charcoal-800">
-                  {shirtSizes.map((row, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-cream-50/50'}>
-                      <td className="p-3.5 font-bold font-serif text-navy-950 text-sm">{row.size}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.neck)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.chest)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.waist)}</td>
-                      <td className="p-3.5 font-mono font-semibold text-bronze-700">{fmt(row.sleeve)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {activeTab === 'trousers' && (
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-navy-950 text-gold-300 font-serif text-[11px] uppercase tracking-wider">
-                  <tr>
-                    <th className="p-3.5 font-bold">Waist Size</th>
-                    <th className="p-3.5 font-bold">Natural Waist ({unit})</th>
-                    <th className="p-3.5 font-bold">Seat / Hips ({unit})</th>
-                    <th className="p-3.5 font-bold">Thigh Width ({unit})</th>
-                    <th className="p-3.5 font-bold">Standard Inseam ({unit})</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-charcoal-100 text-charcoal-800">
-                  {trouserSizes.map((row, idx) => (
-                    <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-cream-50/50'}>
-                      <td className="p-3.5 font-bold font-serif text-navy-950 text-sm">{row.size}</td>
-                      <td className="p-3.5 font-mono font-semibold text-bronze-700">{fmt(row.waist)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.hip)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.thigh)}</td>
-                      <td className="p-3.5 font-mono">{fmt(row.inseam)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* How to Measure Guide Instructions */}
-          <div className="bg-cream-50 border border-charcoal-200 rounded-2xl p-5 space-y-4">
-            <h3 className="text-sm font-bold font-serif text-charcoal-950 flex items-center gap-2">
-              <Info className="w-4 h-4 text-bronze-600" />
-              <span>How to Take Accurate Garment Measurements</span>
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-3 bg-white border border-charcoal-200 rounded-xl space-y-1">
-                <span className="w-5 h-5 rounded-full bg-bronze-600 text-white font-mono font-bold text-[10px] inline-flex items-center justify-center mr-1">
-                  1
+        {/* Scrollable Modal Content */}
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-6 flex-1">
+          {/* Category Banner & Summary */}
+          {currentCategory && (
+            <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 text-white shadow-md">
+              {currentCategory.bannerImage && (
+                <div className="absolute inset-0 z-0 opacity-25 mix-blend-overlay">
+                  <img
+                    src={currentCategory.bannerImage}
+                    alt={currentCategory.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <div className="relative z-10 p-5 sm:p-6 space-y-1.5 bg-gradient-to-r from-slate-950 via-slate-950/90 to-transparent">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                  {currentCategory.name} Specification
                 </span>
-                <strong className="text-charcoal-950 font-bold">Chest / Bust</strong>
-                <p className="text-charcoal-600 leading-snug">
-                  Measure around the fullest part of your chest, under arms, keeping tape parallel to ground.
-                </p>
-              </div>
-
-              <div className="p-3 bg-white border border-charcoal-200 rounded-xl space-y-1">
-                <span className="w-5 h-5 rounded-full bg-bronze-600 text-white font-mono font-bold text-[10px] inline-flex items-center justify-center mr-1">
-                  2
-                </span>
-                <strong className="text-charcoal-950 font-bold">Natural Waist</strong>
-                <p className="text-charcoal-600 leading-snug">
-                  Measure around waistline where you comfortably wear trousers (typically at navel level).
-                </p>
-              </div>
-
-              <div className="p-3 bg-white border border-charcoal-200 rounded-xl space-y-1">
-                <span className="w-5 h-5 rounded-full bg-bronze-600 text-white font-mono font-bold text-[10px] inline-flex items-center justify-center mr-1">
-                  3
-                </span>
-                <strong className="text-charcoal-950 font-bold">Sleeve & Inseam</strong>
-                <p className="text-charcoal-600 leading-snug">
-                  From shoulder seam down to wrist bone. For pants, measure inner leg seam down to ankle.
-                </p>
+                <h3 className="text-xl font-bold font-serif text-white">{currentCategory.name} Size Chart</h3>
+                {currentCategory.description && (
+                  <p className="text-xs text-slate-300 max-w-2xl">{currentCategory.description}</p>
+                )}
               </div>
             </div>
+          )}
+
+          {/* Interactive "Find My Size" Estimator Widget */}
+          <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 sm:p-5 space-y-3 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">Interactive Size Calculator</h4>
+                  <p className="text-[11px] text-slate-600">
+                    Enter your body measurement to highlight your recommended size.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder={`Chest/Waist (${unit})`}
+                  value={userChestVal}
+                  onChange={(e) => handleEstimateSize(e.target.value)}
+                  className="w-36 text-xs px-3 py-1.5 rounded-xl border border-amber-300 bg-white text-slate-900 font-mono font-bold focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                />
+                {userChestVal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUserChestVal('');
+                      setRecommendedSize(null);
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 bg-white rounded-lg border border-amber-200"
+                    title="Reset"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {recommendedSize && (
+              <div className="p-3 bg-slate-950 text-white rounded-xl border border-amber-400/40 flex items-center justify-between animate-fadeIn">
+                <div className="flex items-center gap-2 text-xs font-semibold">
+                  <Check className="w-4 h-4 text-emerald-400" />
+                  <span>
+                    Recommended Size for {userChestVal} {unit}:
+                  </span>
+                  <strong className="text-amber-400 font-serif text-sm px-2 py-0.5 bg-amber-500/20 rounded-md border border-amber-400/30">
+                    {recommendedSize}
+                  </strong>
+                </div>
+                <span className="text-[10px] text-slate-400 hidden sm:inline font-mono">
+                  Highlighted in chart below
+                </span>
+              </div>
+            )}
           </div>
+
+          {/* Size Chart Data Table */}
+          {currentCategory && currentCategory.columns && (
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs">
+              <table className="w-full text-left text-xs font-sans border-collapse">
+                <thead className="bg-slate-950 text-amber-300 font-serif text-[11px] uppercase tracking-wider">
+                  <tr>
+                    {currentCategory.columns.map((col) => (
+                      <th key={col.key} className="p-3.5 font-bold border-b border-slate-800">
+                        {col.label} {col.key !== 'size' ? `(${unit})` : ''}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-800">
+                  {currentCategory.rows.map((row, idx) => {
+                    const isSelected = recommendedSize && String(row.size) === recommendedSize;
+                    return (
+                      <tr
+                        key={idx}
+                        className={`transition-colors ${
+                          isSelected
+                            ? 'bg-amber-100/90 font-bold border-l-4 border-l-amber-600 text-slate-950'
+                            : idx % 2 === 0
+                            ? 'bg-white'
+                            : 'bg-slate-50/60'
+                        }`}
+                      >
+                        {currentCategory.columns.map((col) => (
+                          <td
+                            key={col.key}
+                            className={`p-3.5 ${
+                              col.key === 'size'
+                                ? 'font-bold font-serif text-slate-950 text-sm'
+                                : 'font-mono text-slate-700'
+                            }`}
+                          >
+                            {fmtVal(row[col.key] ?? '-')}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Step-by-Step Visual Measurement Reference Guides */}
+          {currentCategory && currentCategory.metrics && currentCategory.metrics.length > 0 && (
+            <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <h3 className="text-sm font-bold font-serif text-slate-900 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-amber-600" />
+                  <span>Visual Measurement Guide & Diagram Instructions</span>
+                </h3>
+                <span className="text-[10px] text-slate-400 uppercase font-mono tracking-wider">
+                  Step-By-Step Parameters
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+                {currentCategory.metrics.map((metric, idx) => (
+                  <div
+                    key={metric.id || metric.key || idx}
+                    className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs hover:border-amber-400 transition-all flex flex-col justify-between space-y-3"
+                  >
+                    {/* Header */}
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-full bg-amber-600 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">{metric.label}</h4>
+                        <span className="text-[10px] font-mono text-slate-400 uppercase">
+                          Parameter: {metric.key}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Diagram Image if uploaded by Admin */}
+                    {metric.image && (
+                      <div className="relative aspect-16/9 rounded-xl overflow-hidden bg-slate-950 border border-slate-200 group">
+                        <img
+                          src={metric.image}
+                          alt={metric.label}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-2">
+                          <span className="text-[10px] font-bold text-amber-300 bg-slate-950/70 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                            {metric.label} Diagram
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Description */}
+                    <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      {metric.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
-        <div className="p-5 bg-navy-950 text-white border-t border-navy-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Modal Footer */}
+        <div className="p-4 sm:p-5 bg-slate-950 text-white border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-300">
-            <Check className="w-4 h-4 text-emerald-400 stroke-[3]" />
-            <span>Backed by our 30-Day Perfect Fit Guarantee & Free Master Alterations.</span>
+            <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>Backed by our 30-Day Bespoke Fit Guarantee & Free Atelier Tailoring Adjustments.</span>
           </div>
 
           <Button
-            variant="accent"
+            variant="gold"
             size="md"
             onClick={onClose}
             rightIcon={<ArrowRight className="w-4 h-4" />}
           >
-            Close Guide
+            Close Advisory
           </Button>
         </div>
       </div>

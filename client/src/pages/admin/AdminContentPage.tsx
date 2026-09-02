@@ -10,7 +10,11 @@ import {
   CMSCuratedItem,
   CMSFAQItem,
   CMSTestimonial,
+  CMSSizeGuideData,
+  CMSSizeChartCategory,
+  CMSMeasurementMetric,
   DEFAULT_CURATED_COLLECTION,
+  DEFAULT_SIZE_GUIDE_DATA,
 } from '../../services/contentService';
 import { adminService } from '../../services/adminService';
 import { Product, CustomSection, HomeLayoutSection } from '@stitchx/shared';
@@ -48,6 +52,7 @@ import {
   HelpCircle,
   MessageSquare,
   Star,
+  Ruler,
 } from 'lucide-react';
 
 export function AdminContentPage() {
@@ -74,6 +79,8 @@ export function AdminContentPage() {
   const [curatedCollection, setCuratedCollection] = useState<CMSCuratedCollectionSection>(DEFAULT_CURATED_COLLECTION);
   const [faqItems, setFaqItems] = useState<CMSFAQItem[]>([]);
   const [testimonialsItems, setTestimonialsItems] = useState<CMSTestimonial[]>([]);
+  const [sizeGuideData, setSizeGuideData] = useState<CMSSizeGuideData>(DEFAULT_SIZE_GUIDE_DATA);
+  const [selectedSizeCatIdx, setSelectedSizeCatIdx] = useState<number>(0);
 
   // Showcase Section Modal State
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
@@ -118,7 +125,7 @@ export function AdminContentPage() {
   const loadAllContent = async () => {
     setLoading(true);
     try {
-      const [n, f, a, h, p, prods, secs, layout, curated, faqs, tests] = await Promise.all([
+      const [n, f, a, h, p, prods, secs, layout, curated, faqs, tests, sg] = await Promise.all([
         contentService.getBlockContent('nav').catch(() => []),
         contentService.getBlockContent('footer').catch(() => ({ columns: [], socialLinks: {}, contact: {} })),
         contentService.getBlockContent('announcement').catch(() => ({ text: '', link: '', isActive: false })),
@@ -130,6 +137,7 @@ export function AdminContentPage() {
         contentService.getCuratedCollectionContent().catch(() => DEFAULT_CURATED_COLLECTION),
         contentService.getFaqContent().catch(() => []),
         contentService.getTestimonialsContent().catch(() => []),
+        contentService.getSizeGuideContent().catch(() => DEFAULT_SIZE_GUIDE_DATA),
       ]);
 
       setNavItems(Array.isArray(n) ? n : []);
@@ -144,10 +152,20 @@ export function AdminContentPage() {
       if (curated) setCuratedCollection(curated);
       setFaqItems(Array.isArray(faqs) ? faqs : []);
       setTestimonialsItems(Array.isArray(tests) ? tests : []);
+      if (sg) setSizeGuideData(sg);
     } catch (_err) {
       toast('error', 'Load Error', 'Failed to load CMS content from server');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSizeGuide = async () => {
+    try {
+      await contentService.saveSizeGuideContent(sizeGuideData);
+      toast('success', 'Size Guide Saved', 'Size & measurement guide content updated live.');
+    } catch (_err) {
+      toast('error', 'Save Error', 'Failed to save size guide content');
     }
   };
 
@@ -2155,6 +2173,456 @@ export function AdminContentPage() {
                       No testimonials found. Click "Add Testimonial" to create one.
                     </div>
                   )}
+                </div>
+              </Card>
+            ),
+          },
+          {
+            id: 'size_guide',
+            label: (
+              <span className="flex items-center gap-2 font-medium">
+                <Ruler className="w-4 h-4 text-amber-600" /> Size & Measurement Advisory
+              </span>
+            ),
+            content: (
+              <Card className="p-6 space-y-8 bg-white border border-slate-200/80 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                  <div>
+                    <h3 className="text-lg font-bold font-serif text-slate-900 flex items-center gap-2">
+                      <Ruler className="w-5 h-5 text-amber-600" />
+                      Size & Measurement Advisory Configurator
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Manage garment categories (Suits, Shirts, Trousers), update standard measurements, and upload visual measurement diagram images (e.g. Chest size, Waist size).
+                    </p>
+                  </div>
+                  <Button
+                    variant="gold"
+                    onClick={handleSaveSizeGuide}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" /> Save Size Guide Changes
+                  </Button>
+                </div>
+
+                {/* Section 1: Main Title, Subtitle, Unit */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200/80">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Main Modal Title
+                    </label>
+                    <Input
+                      value={sizeGuideData.title || ''}
+                      onChange={(e) => setSizeGuideData({ ...sizeGuideData, title: e.target.value })}
+                      placeholder="e.g. Bespoke Size & Measurement Advisory"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Main Modal Subtitle
+                    </label>
+                    <Input
+                      value={sizeGuideData.subtitle || ''}
+                      onChange={(e) => setSizeGuideData({ ...sizeGuideData, subtitle: e.target.value })}
+                      placeholder="e.g. Master-tailored garment measurements with visual guidance."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Default Unit
+                    </label>
+                    <select
+                      value={sizeGuideData.defaultUnit || 'in'}
+                      onChange={(e) => setSizeGuideData({ ...sizeGuideData, defaultUnit: e.target.value as any })}
+                      className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-900 font-semibold focus:outline-hidden focus:border-amber-500"
+                    >
+                      <option value="in">Inches (in)</option>
+                      <option value="cm">Centimeters (cm)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Section 2: Category Selector & Category Manager */}
+                <div className="space-y-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Garment Category:</span>
+                      {sizeGuideData.categories.map((cat, catIdx) => (
+                        <button
+                          key={cat.id || cat.slug || catIdx}
+                          type="button"
+                          onClick={() => setSelectedSizeCatIdx(catIdx)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                            selectedSizeCatIdx === catIdx
+                              ? 'bg-amber-600 text-white shadow-sm'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newCat: CMSSizeChartCategory = {
+                          id: `cat-${Date.now()}`,
+                          slug: `category-${Date.now()}`,
+                          name: 'New Garment Category',
+                          description: 'Description for new garment category size guide...',
+                          columns: [
+                            { key: 'size', label: 'Size Label' },
+                            { key: 'chest', label: 'Chest Size' },
+                            { key: 'waist', label: 'Waist Size' },
+                          ],
+                          rows: [
+                            { size: 'M', chest: 40.0, waist: 34.0 },
+                            { size: 'L', chest: 42.0, waist: 36.0 },
+                          ],
+                          metrics: [
+                            {
+                              id: `m-${Date.now()}`,
+                              key: 'chest',
+                              label: 'Chest Size',
+                              description: 'Measure around fullest part of chest.',
+                            },
+                          ],
+                        };
+                        const updatedCats = [...sizeGuideData.categories, newCat];
+                        setSizeGuideData({ ...sizeGuideData, categories: updatedCats });
+                        setSelectedSizeCatIdx(updatedCats.length - 1);
+                      }}
+                      className="text-xs font-bold flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add New Garment Category
+                    </Button>
+                  </div>
+
+                  {/* Active Category Configurator */}
+                  {sizeGuideData.categories[selectedSizeCatIdx] && (() => {
+                    const currentCat = sizeGuideData.categories[selectedSizeCatIdx];
+
+                    const updateCurrentCat = (partialCat: Partial<CMSSizeChartCategory>) => {
+                      const updatedCats = [...sizeGuideData.categories];
+                      updatedCats[selectedSizeCatIdx] = {
+                        ...updatedCats[selectedSizeCatIdx],
+                        ...partialCat,
+                      };
+                      setSizeGuideData({ ...sizeGuideData, categories: updatedCats });
+                    };
+
+                    return (
+                      <div className="space-y-6 bg-slate-50/70 border border-slate-200 p-6 rounded-2xl">
+                        {/* Category Metadata Header */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-1 rounded-md text-xs font-extrabold uppercase bg-amber-100 text-amber-900 border border-amber-300">
+                              Active: {currentCat.name}
+                            </span>
+                            <span className="font-mono text-xs text-slate-500">slug: {currentCat.slug}</span>
+                          </div>
+
+                          {sizeGuideData.categories.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const updatedCats = sizeGuideData.categories.filter((_, idx) => idx !== selectedSizeCatIdx);
+                                setSizeGuideData({ ...sizeGuideData, categories: updatedCats });
+                                setSelectedSizeCatIdx(Math.max(0, selectedSizeCatIdx - 1));
+                                toast('info', 'Category Removed', `Deleted category "${currentCat.name}"`);
+                              }}
+                              className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 flex items-center gap-1 transition-all"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete Category
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                              Category Display Name *
+                            </label>
+                            <Input
+                              value={currentCat.name}
+                              onChange={(e) => updateCurrentCat({ name: e.target.value })}
+                              placeholder="e.g. Suits & Blazers"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                              System Slug *
+                            </label>
+                            <Input
+                              value={currentCat.slug}
+                              onChange={(e) =>
+                                updateCurrentCat({
+                                  slug: e.target.value.toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
+                                })
+                              }
+                              placeholder="e.g. suits"
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                              Category Description & Sizing Guidance
+                            </label>
+                            <Input
+                              value={currentCat.description || ''}
+                              onChange={(e) => updateCurrentCat({ description: e.target.value })}
+                              placeholder="e.g. Standard sizing for Italian Wool Jackets, Tuxedos, and Blazers."
+                            />
+                          </div>
+
+                          {/* Category Overall Banner Image Uploader */}
+                          <div className="md:col-span-2 space-y-2">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                              Category Banner / Cover Image
+                            </label>
+                            <ImageUploader
+                              value={currentCat.bannerImage || ''}
+                              onChange={(val) =>
+                                updateCurrentCat({ bannerImage: typeof val === 'string' ? val : val.url })
+                              }
+                              folder="size_guide"
+                            />
+                          </div>
+                        </div>
+
+                        {/* --- SIZE CHART TABLE DATA EDITOR --- */}
+                        <div className="space-y-4 pt-4 border-t border-slate-200">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <Layers className="w-4 h-4 text-amber-600" /> Size Chart Table Data ({currentCat.rows.length} Sizes)
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                Edit values for sizes, chest, shoulder, waist, sleeve, length, etc.
+                              </p>
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newRow: Record<string, any> = {};
+                                currentCat.columns.forEach((col) => {
+                                  newRow[col.key] = col.key === 'size' ? 'New Size' : 40.0;
+                                });
+                                updateCurrentCat({ rows: [...currentCat.rows, newRow] });
+                              }}
+                              className="text-xs font-bold flex items-center gap-1.5"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> Add Size Row
+                            </Button>
+                          </div>
+
+                          {/* Render Editable Table */}
+                          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs">
+                            <table className="w-full text-left text-xs font-sans">
+                              <thead className="bg-slate-900 text-amber-300 font-serif text-[11px] uppercase tracking-wider">
+                                <tr>
+                                  {currentCat.columns.map((col, colIdx) => (
+                                    <th key={col.key || colIdx} className="p-3 font-bold border-b border-slate-800">
+                                      <input
+                                        type="text"
+                                        value={col.label}
+                                        onChange={(e) => {
+                                          const updatedCols = [...currentCat.columns];
+                                          updatedCols[colIdx].label = e.target.value;
+                                          updateCurrentCat({ columns: updatedCols });
+                                        }}
+                                        className="bg-slate-800 text-amber-200 text-xs px-2 py-1 rounded-md font-serif border border-slate-700 w-full focus:outline-hidden focus:border-amber-400"
+                                      />
+                                    </th>
+                                  ))}
+                                  <th className="p-3 font-bold border-b border-slate-800 w-16 text-center">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 text-slate-800">
+                                {currentCat.rows.map((row, rowIdx) => (
+                                  <tr key={rowIdx} className="hover:bg-slate-50/80 transition-colors">
+                                    {currentCat.columns.map((col) => (
+                                      <td key={col.key} className="p-2.5">
+                                        <input
+                                          type={col.key === 'size' ? 'text' : 'text'}
+                                          value={row[col.key] ?? ''}
+                                          onChange={(e) => {
+                                            const updatedRows = [...currentCat.rows];
+                                            const rawVal = e.target.value;
+                                            const numVal = parseFloat(rawVal);
+                                            updatedRows[rowIdx] = {
+                                              ...updatedRows[rowIdx],
+                                              [col.key]: !isNaN(numVal) && col.key !== 'size' ? numVal : rawVal,
+                                            };
+                                            updateCurrentCat({ rows: updatedRows });
+                                          }}
+                                          className="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-amber-500 font-mono text-slate-900 bg-white"
+                                          placeholder={`Enter ${col.label}...`}
+                                        />
+                                      </td>
+                                    ))}
+                                    <td className="p-2.5 text-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updatedRows = currentCat.rows.filter((_, idx) => idx !== rowIdx);
+                                          updateCurrentCat({ rows: updatedRows });
+                                        }}
+                                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete Row"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* --- VISUAL MEASUREMENT METRIC DIAGRAMS & INSTRUCTIONS EDITOR --- */}
+                        <div className="space-y-4 pt-4 border-t border-slate-200">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                              <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                <Sparkles className="w-4 h-4 text-amber-600" /> Measurement Metric Guides & Diagram Images ({currentCat.metrics.length})
+                              </h4>
+                              <p className="text-xs text-slate-500">
+                                Upload or link specific measurement diagram images for Chest Size, Waist Size, Shoulder Width, Sleeve Length, etc.
+                              </p>
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const newMetric: CMSMeasurementMetric = {
+                                  id: `m-${Date.now()}`,
+                                  key: 'chest',
+                                  label: 'Chest Size & Circumference',
+                                  description: 'Measure around the fullest part of your chest...',
+                                  image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=600&q=80',
+                                };
+                                updateCurrentCat({ metrics: [...currentCat.metrics, newMetric] });
+                              }}
+                              className="text-xs font-bold flex items-center gap-1.5"
+                            >
+                              <Plus className="w-3.5 h-3.5" /> Add Metric Guide
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {currentCat.metrics.map((metric, mIdx) => (
+                              <div
+                                key={metric.id || mIdx}
+                                className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 relative"
+                              >
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-900 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200">
+                                    Metric #{mIdx + 1}: {metric.label}
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updatedMetrics = currentCat.metrics.filter((_, idx) => idx !== mIdx);
+                                      updateCurrentCat({ metrics: updatedMetrics });
+                                    }}
+                                    className="text-xs text-red-600 hover:bg-red-50 p-1 rounded-md transition-colors"
+                                    title="Remove Metric"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-3">
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                        Parameter Key
+                                      </label>
+                                      <Input
+                                        value={metric.key}
+                                        onChange={(e) => {
+                                          const updatedMetrics = [...currentCat.metrics];
+                                          updatedMetrics[mIdx].key = e.target.value;
+                                          updateCurrentCat({ metrics: updatedMetrics });
+                                        }}
+                                        placeholder="e.g. chest"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                        Guide Label
+                                      </label>
+                                      <Input
+                                        value={metric.label}
+                                        onChange={(e) => {
+                                          const updatedMetrics = [...currentCat.metrics];
+                                          updatedMetrics[mIdx].label = e.target.value;
+                                          updateCurrentCat({ metrics: updatedMetrics });
+                                        }}
+                                        placeholder="e.g. Chest Size"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                                      Step-by-Step Instructions
+                                    </label>
+                                    <textarea
+                                      rows={2}
+                                      value={metric.description}
+                                      onChange={(e) => {
+                                        const updatedMetrics = [...currentCat.metrics];
+                                        updatedMetrics[mIdx].description = e.target.value;
+                                        updateCurrentCat({ metrics: updatedMetrics });
+                                      }}
+                                      className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-hidden focus:ring-1 focus:ring-amber-500 font-sans text-slate-800"
+                                      placeholder="Describe how to measure this specific parameter..."
+                                    />
+                                  </div>
+
+                                  {/* Metric Diagram Image Upload */}
+                                  <div className="space-y-1">
+                                    <label className="block text-[11px] font-bold text-slate-700">
+                                      Diagram Image for {metric.label} (Chest size, Waist size diagram, etc.)
+                                    </label>
+                                    <ImageUploader
+                                      value={metric.image || ''}
+                                      onChange={(val) => {
+                                        const updatedMetrics = [...currentCat.metrics];
+                                        updatedMetrics[mIdx].image = typeof val === 'string' ? val : val.url;
+                                        updateCurrentCat({ metrics: updatedMetrics });
+                                      }}
+                                      folder="size_guide"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <div className="pt-4 border-t border-slate-200 flex justify-end">
+                  <Button
+                    variant="gold"
+                    onClick={handleSaveSizeGuide}
+                    className="flex items-center gap-2 px-8"
+                  >
+                    <Save className="w-4 h-4" /> Save Size Guide Changes
+                  </Button>
                 </div>
               </Card>
             ),
