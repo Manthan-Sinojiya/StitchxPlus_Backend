@@ -1220,8 +1220,8 @@ export function AdminProductsPage() {
 
                     {/* Variant Combinations Table */}
                     {formData.simpleVariants.length > 0 ? (
-                      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                        <table className="w-full text-left text-xs">
+                      <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+                        <table className="w-full text-left text-xs min-w-[600px]">
                           <thead className="bg-slate-100/80 text-slate-700 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200">
                             <tr>
                               <th className="py-2.5 px-3">Color</th>
@@ -1931,8 +1931,8 @@ export function AdminProductsPage() {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
-            <table className="w-full text-left text-xs">
+          <div className="bg-white rounded-2xl border border-slate-200/80 overflow-x-auto shadow-xs">
+            <table className="w-full text-left text-xs min-w-[650px]">
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80">
                 <tr>
                   <th className="py-3.5 px-4">Garment</th>

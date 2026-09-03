@@ -65,4 +65,9 @@ export const userService = {
     if (!res.success || !res.data) throw new Error(res.error?.message || 'Failed to remove from wishlist');
     return res.data;
   },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const res = await apiClient.put<null>('/users/me/password', { currentPassword, newPassword });
+    if (!res.success) throw new Error(res.error?.message || 'Failed to update password');
+  },
 };

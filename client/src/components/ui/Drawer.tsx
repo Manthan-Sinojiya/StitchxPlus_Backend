@@ -39,9 +39,6 @@ export function Drawer({
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
-      setTimeout(() => {
-        drawerRef.current?.focus();
-      }, 50);
     }
 
     return () => {
@@ -49,6 +46,15 @@ export function Drawer({
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen && drawerRef.current) {
+      const active = document.activeElement;
+      if (!active || !drawerRef.current.contains(active)) {
+        drawerRef.current.focus();
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

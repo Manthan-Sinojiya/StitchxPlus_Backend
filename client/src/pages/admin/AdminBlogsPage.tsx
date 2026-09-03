@@ -244,7 +244,7 @@ export const AdminBlogsPage: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="bg-cream-50/80 border-b border-charcoal-200/70 text-[11px] font-extrabold text-charcoal-700 uppercase tracking-wider">
                   <th className="py-3.5 px-6">Article</th>

@@ -38,7 +38,7 @@ export const CuratedCollectionsSection: React.FC = () => {
 
   if (loading) {
     return (
-      <section className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4 animate-pulse">
+      <section className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4 animate-pulse">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           <div className="lg:col-span-5 order-2 lg:order-1">
             <div className="aspect-[4/5] rounded-3xl bg-slate-200/80" />
@@ -69,7 +69,7 @@ export const CuratedCollectionsSection: React.FC = () => {
   const activeItem = displayList[safeActiveIndex] || displayList[0];
 
   return (
-    <section className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4">
+    <section className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         {/* Left Column: Featured Image with Smooth Dynamic Switch */}
         <div className="lg:col-span-5 order-2 lg:order-1">

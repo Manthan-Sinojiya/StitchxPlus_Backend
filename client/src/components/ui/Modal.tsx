@@ -24,10 +24,6 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
-      // Focus modal container for accessibility
-      setTimeout(() => {
-        modalRef.current?.focus();
-      }, 50);
     }
 
     return () => {
@@ -35,6 +31,15 @@ export function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'md
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const active = document.activeElement;
+      if (!active || !modalRef.current.contains(active)) {
+        modalRef.current.focus();
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Eye, Star, Heart, Plus, Minus, Sparkles, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { useCartStore } from '../../store/useCartStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useToast, Modal } from '../ui';
 
 
@@ -83,6 +84,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   isWishlisted = false,
   className = '',
 }) => {
+  const user = useAuthStore((state) => state.user);
   const { toast } = useToast();
   const cart = useCartStore((state) => state.cart);
   const addItem = useCartStore((state) => state.addItem);
@@ -328,7 +330,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Bottom Floating 3D Add to Cart Button Container */}
         <div className="w-full z-20 pt-2 transition-all duration-300 transform sm:opacity-95 opacity-100 sm:translate-y-1 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
-          {cartQuantity > 0 ? (
+          {user?.role === 'ADMIN' ? (
+            <RouterLink
+              to="/admin/products"
+              onClick={(e) => e.stopPropagation()}
+              className="w-full py-3 px-4 rounded-full bg-slate-950 text-amber-400 font-bold text-xs shadow-lg hover:bg-slate-900 transition-all flex items-center justify-center gap-2 border border-slate-800"
+            >
+              <span>Manage in Admin</span>
+            </RouterLink>
+          ) : cartQuantity > 0 ? (
             <div className="w-full bg-slate-950 text-white rounded-full py-2.5 px-4 shadow-xl flex items-center justify-between border border-slate-800/80 backdrop-blur-md">
               <button
                 type="button"

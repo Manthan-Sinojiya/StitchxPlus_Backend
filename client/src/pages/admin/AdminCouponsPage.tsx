@@ -177,8 +177,8 @@ export function AdminCouponsPage() {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
-            <table className="w-full text-left text-xs">
+          <div className="bg-white rounded-2xl border border-slate-200/80 overflow-x-auto shadow-xs">
+            <table className="w-full text-left text-xs min-w-[650px]">
               <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80">
                 <tr>
                   <th className="py-3.5 px-4">Coupon Code</th>

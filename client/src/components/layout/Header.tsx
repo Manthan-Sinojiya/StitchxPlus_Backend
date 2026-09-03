@@ -9,6 +9,7 @@ import {
   Scissors,
   LogOut,
   ShieldAlert,
+  Shield,
   ChevronDown,
   X,
   Tag,
@@ -315,7 +316,7 @@ export function Header() {
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-[8px] h-20 flex items-center justify-between gap-4 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4 relative">
         {/* Mobile Hamburger Menu Toggle */}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
@@ -789,33 +790,45 @@ export function Header() {
             </Link>
           )}
 
-          {/* Cart Trigger */}
-          <button
-            onClick={openCart}
-            className="relative p-2.5 bg-charcoal-950 hover:bg-charcoal-800 text-white rounded-xl font-bold transition-all shadow-card flex items-center gap-2"
-            aria-label="Shopping Cart"
-          >
-            <ShoppingBag className="w-5 h-5 text-bronze-400" />
-            <span className="hidden sm:inline text-xs uppercase font-extrabold tracking-wider">
-              Cart
-            </span>
-            {cartCount > 0 && (
-              <span className="bg-bronze-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                {cartCount}
+          {/* Cart Trigger (Hidden for Admin users) */}
+          {user?.role !== 'ADMIN' && (
+            <button
+              onClick={openCart}
+              className="relative p-2.5 bg-charcoal-950 hover:bg-charcoal-800 text-white rounded-xl font-bold transition-all shadow-card flex items-center gap-2"
+              aria-label="Shopping Cart"
+            >
+              <ShoppingBag className="w-5 h-5 text-bronze-400" />
+              <span className="hidden sm:inline text-xs uppercase font-extrabold tracking-wider">
+                Cart
               </span>
-            )}
-          </button>
+              {cartCount > 0 && (
+                <span className="bg-bronze-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Account Icon / Badge & LogOut */}
           {isAuthenticated ? (
             <div className="flex items-center gap-1.5">
-              <Link
-                to="/account"
-                className="flex items-center gap-2 p-2 px-3 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold"
-              >
-                <UserIcon className="w-4 h-4 text-bronze-600" />
-                <span className="hidden sm:inline max-w-[100px] truncate">{user?.name.split(' ')[0]}</span>
-              </Link>
+              {user?.role === 'ADMIN' ? (
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-2 p-2 px-3.5 text-white bg-gold-600 hover:bg-gold-500 rounded-xl transition-all text-xs font-bold shadow-sm"
+                >
+                  <Shield className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin Portal</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/account"
+                  className="flex items-center gap-2 p-2 px-3 text-charcoal-800 hover:text-charcoal-950 bg-cream-50 hover:bg-cream-100 rounded-xl border border-charcoal-200 transition-all text-xs font-semibold"
+                >
+                  <UserIcon className="w-4 h-4 text-bronze-600" />
+                  <span className="hidden sm:inline max-w-[100px] truncate">{user?.name.split(' ')[0]}</span>
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 title="Sign Out"
@@ -933,34 +946,38 @@ export function Header() {
               );
             })}
 
-            <button
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                openCart();
-              }}
-              className="px-4 py-3 rounded-xl hover:bg-cream-100 font-semibold text-charcoal-900 text-base flex items-center justify-between w-full text-left"
-            >
-              <span>Shopping Cart</span>
-              <Badge variant="gold">{cartCount}</Badge>
-            </button>
+            {user?.role !== 'ADMIN' && (
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openCart();
+                }}
+                className="px-4 py-3 rounded-xl hover:bg-cream-100 font-semibold text-charcoal-900 text-base flex items-center justify-between w-full text-left"
+              >
+                <span>Shopping Cart</span>
+                <Badge variant="gold">{cartCount}</Badge>
+              </button>
+            )}
 
             {isAuthenticated ? (
               <>
-                <Link
-                  to="/account"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-3 rounded-xl hover:bg-cream-100 font-semibold text-charcoal-900 text-base flex items-center justify-between"
-                >
-                  <span>My Account ({user?.name})</span>
-                  <Badge variant="gold">{user?.role}</Badge>
-                </Link>
-                {user?.role === 'ADMIN' && (
+                {user?.role === 'ADMIN' ? (
                   <Link
                     to="/admin"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-3 rounded-xl bg-charcoal-950 text-white font-bold text-sm"
+                    className="px-4 py-3 rounded-xl bg-gold-600 text-white font-bold text-sm flex items-center justify-between"
                   >
-                    Admin Portal
+                    <span>Admin Portal</span>
+                    <Shield className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <Link
+                    to="/account"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-4 py-3 rounded-xl hover:bg-cream-100 font-semibold text-charcoal-900 text-base flex items-center justify-between"
+                  >
+                    <span>My Account ({user?.name})</span>
+                    <Badge variant="gold">{user?.role}</Badge>
                   </Link>
                 )}
                 <button

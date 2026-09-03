@@ -154,7 +154,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 bg-slate-50/70 overflow-y-auto">
         {/* Top Header Bar */}
-        <header className="h-16 border-b border-slate-200/80 px-[8px] flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+        <header className="h-16 border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-full">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -177,7 +177,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Dynamic Page Content Container */}
-        <div className="py-8 px-[8px] max-w-7xl w-full mx-auto space-y-8">{children}</div>
+        <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-7xl w-full mx-auto space-y-8">{children}</div>
       </main>
     </div>
   );

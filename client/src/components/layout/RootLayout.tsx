@@ -10,7 +10,7 @@ export function RootLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-cream-50 text-navy-900 font-sans selection:bg-gold-500 selection:text-navy-950">
       <Header />
-      <main className={`flex-1 w-full ${isHomePage ? 'px-0 py-0 max-w-full' : 'max-w-7xl mx-auto px-[8px] py-8'}`}>
+      <main className={`flex-1 w-full ${isHomePage ? 'px-0 py-0 max-w-full' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10'}`}>
         <Outlet />
       </main>
       <Footer />

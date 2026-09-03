@@ -6,7 +6,6 @@ import { User, Mail, Lock, Phone, ArrowRight, ShieldCheck, AlertCircle } from 'l
 import {
   Button,
   Input,
-  Select,
   Card,
   CardContent,
   CardHeader,
@@ -38,7 +37,7 @@ export function RegisterPage() {
   const onSubmit = async (data: RegisterInput) => {
     setApiError(null);
     try {
-      const response = await authService.register(data);
+      const response = await authService.register({ ...data, role: 'CUSTOMER' });
       if (response.success && response.data) {
         setAuth(response.data.user, response.data.accessToken);
         toast(
@@ -46,7 +45,7 @@ export function RegisterPage() {
           'Account Created',
           'Welcome to Stitchx Plus! Your fit profile has been initialized.',
         );
-        navigate('/account');
+        navigate('/');
       } else {
         const errorMsg =
           response.error?.message || 'Registration failed. Please check your information.';
@@ -101,26 +100,13 @@ export function RegisterPage() {
               error={errors.email?.message}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Phone Number (Optional)"
-                placeholder="+1 (555) 000-0000"
-                startIcon={<Phone className="w-4 h-4" />}
-                {...register('phone')}
-                error={errors.phone?.message}
-              />
-
-              <Select
-                label="Account Role"
-                options={[
-                  { value: 'CUSTOMER', label: 'Customer' },
-                  { value: 'STAFF', label: 'Master Tailor (Staff)' },
-                  { value: 'ADMIN', label: 'Administrator' },
-                ]}
-                {...register('role')}
-                error={errors.role?.message}
-              />
-            </div>
+            <Input
+              label="Phone Number (Optional)"
+              placeholder="+1 (555) 000-0000"
+              startIcon={<Phone className="w-4 h-4" />}
+              {...register('phone')}
+              error={errors.phone?.message}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
@@ -165,3 +151,4 @@ export function RegisterPage() {
     </div>
   );
 }
+

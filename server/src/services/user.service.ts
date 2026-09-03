@@ -1,6 +1,7 @@
 import { UserRepository } from '../repositories/user.repository.js';
 import { IUserDocument, IUserAddress, UserModel } from '../models/user.model.js';
 import { AppError } from '../utils/appError.js';
+import { comparePassword, hashPassword } from '../utils/auth.js';
 import { UserRole } from '@stitchx/shared';
 import { Types } from 'mongoose';
 
@@ -121,5 +122,18 @@ export class UserService {
       await user.save();
     }
     return this.getWishlist(userId);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await UserModel.findById(userId).select('+password').exec();
+    if (!user) {
+      throw new AppError('User profile not found', 404);
+    }
+    const isMatch = await comparePassword(currentPassword, user.password);
+    if (!isMatch) {
+      throw new AppError('Current password is incorrect', 400);
+    }
+    user.password = await hashPassword(newPassword);
+    await user.save();
   }
 }

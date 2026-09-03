@@ -125,4 +125,15 @@ export class UserController {
       next(err);
     }
   };
+
+  public changePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.userId || (req as any).user?.id;
+      const { currentPassword, newPassword } = req.body;
+      await this.userService.changePassword(userId, currentPassword, newPassword);
+      sendSuccess(res, null, 'Password updated successfully');
+    } catch (err) {
+      next(err);
+    }
+  };
 }

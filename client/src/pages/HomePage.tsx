@@ -340,7 +340,7 @@ export function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/40 pointer-events-none" />
             </div>
 
-            <div className="max-w-7xl mx-auto px-[8px] w-full my-auto py-12 sm:py-16 lg:py-18 relative z-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full my-auto py-12 sm:py-16 lg:py-18 relative z-10">
               <div className="max-w-2xl space-y-6">
                 {currentSlide.subtitle && (
                   <span className="inline-block px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold tracking-[0.2em] uppercase border border-amber-500/30 backdrop-blur-md shadow-xs">
@@ -393,7 +393,7 @@ export function HomePage() {
 
       case 'showcase_tabs':
         return (
-          <section key={sectionItem.id} className="space-y-8 max-w-7xl mx-auto px-[8px] pt-10 pb-4">
+          <section key={sectionItem.id} className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
             {/* Showcase Tabs Bar with Admin Sequence */}
             <div className="flex items-center justify-center border-b border-neutral-200 gap-6 sm:gap-10 pb-1 overflow-x-auto">
               {activeShowcaseTabs.map((sec) => (
@@ -462,7 +462,7 @@ export function HomePage() {
       case 'categories':
         const isScrollableCategories = categories.length > 4;
         return (
-          <section key={sectionItem.id} className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4">
+          <section key={sectionItem.id} className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-neutral-200 pb-4">
               <div>
                 <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/20 mb-2">
@@ -575,7 +575,7 @@ export function HomePage() {
 
       case 'custom_promo':
         return (
-          <section key={sectionItem.id} className="max-w-7xl mx-auto px-[8px] py-6">
+          <section key={sectionItem.id} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="relative rounded-2xl overflow-hidden bg-slate-950 text-white min-h-[320px] flex flex-col justify-center p-8 sm:p-12 border border-amber-500/20 shadow-xl">
               {sectionItem.bannerImage && (
                 <img
@@ -616,14 +616,14 @@ export function HomePage() {
         return (
           <section
             key={sectionItem.id}
-            className="max-w-7xl mx-auto px-[8px] py-6"
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
             dangerouslySetInnerHTML={{ __html: sectionItem.customHtml || '' }}
           />
         );
 
       case 'faq':
         return (
-          <section key={sectionItem.id} className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4">
+          <section key={sectionItem.id} className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-neutral-200 pb-4">
               <div>
                 <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-amber-500/10 text-amber-600 border border-amber-500/20 mb-2">

@@ -8,6 +8,7 @@ const userController = new UserController();
 // User Me Profile
 router.get('/me', authenticate, userController.getMe);
 router.patch('/me', authenticate, userController.updateMe);
+router.put('/me/password', authenticate, userController.changePassword);
 
 // Address Book Routes
 router.get('/me/addresses', authenticate, userController.getAddresses);

@@ -424,8 +424,8 @@ export function AdminCategoriesPage() {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
-          <table className="w-full text-left text-xs">
+          <div className="bg-white rounded-2xl border border-slate-200/80 overflow-x-auto shadow-xs">
+            <table className="w-full text-left text-xs min-w-[700px]">
             <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80">
               <tr>
                 <th className="py-3.5 px-4">Entity / Name</th>
@@ -517,7 +517,7 @@ export function AdminCategoriesPage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-400 font-medium">
+                  <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
                     No categories found matching criteria.
                   </td>
                 </tr>

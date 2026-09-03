@@ -45,7 +45,7 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ title, subtitle }) => 
   const displayBlogs = blogs.slice(0, 3);
 
   return (
-    <section className="space-y-6 max-w-7xl mx-auto px-[8px] pt-10 pb-4">
+    <section className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
       {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-neutral-200 pb-4">
         <div className="space-y-2">

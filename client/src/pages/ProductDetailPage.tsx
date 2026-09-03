@@ -18,6 +18,7 @@ import {
   Edit3,
   ZoomIn,
   Ruler,
+  Shield,
 } from 'lucide-react';
 import { Button, Badge, Tabs, useToast } from '../components/ui';
 import { SizeChartModal } from '../components/ui/SizeChartModal';
@@ -27,6 +28,7 @@ import { ShippingReturnInfo } from '../features/products/ShippingReturnInfo';
 import { RelatedProductsSection } from '../features/products/RelatedProductsSection';
 import { SEOHead } from '../components/seo/SEOHead';
 import { customizationService } from '../services/customizationService';
+import { useAuthStore } from '../store/useAuthStore';
 import { Fabric, CustomizationOptionGroup } from '@stitchx/shared';
 
 
@@ -35,6 +37,7 @@ export function ProductDetailPage() {
   const { id: slug } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const user = useAuthStore((state) => state.user);
 
   const [selectedSize, setSelectedSize] = useState('custom');
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
@@ -1075,7 +1078,23 @@ export function ProductDetailPage() {
                   </div>
                 )}
 
-                {product.inStock ? (
+                {user?.role === 'ADMIN' ? (
+                  <div className="p-5 bg-charcoal-950 text-white rounded-2xl space-y-2 border border-gold-500/40">
+                    <div className="flex items-center gap-2 font-bold text-gold-400 text-sm">
+                      <Shield className="w-4 h-4" />
+                      <span>Admin Catalog Mode</span>
+                    </div>
+                    <p className="text-xs text-charcoal-300">
+                      You are logged in as Administrator. Shopping cart and ordering features are disabled for admin accounts.
+                    </p>
+                    <Link
+                      to="/admin/products"
+                      className="inline-block mt-2 px-4 py-2.5 bg-gold-600 hover:bg-gold-500 text-white font-bold text-xs rounded-xl transition-all shadow-xs"
+                    >
+                      Manage Products in Admin Portal →
+                    </Link>
+                  </div>
+                ) : product.inStock ? (
                   <>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">

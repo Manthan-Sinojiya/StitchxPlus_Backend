@@ -24,7 +24,7 @@ export function LoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/account';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   const {
     register,

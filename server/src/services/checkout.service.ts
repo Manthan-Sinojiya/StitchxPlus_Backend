@@ -29,7 +29,8 @@ export class CheckoutService {
     const validatedItems = [];
 
     for (const item of cart.items) {
-      const product = await ProductModel.findById(item.productId).exec();
+      const productId = typeof item.productId === 'object' ? (item.productId as any)?._id || (item.productId as any)?.id : item.productId;
+      const product = await ProductModel.findById(productId).exec();
       if (!product || !product.inStock) {
         unavailableItems.push(item.product?.name || item.productId);
       } else {

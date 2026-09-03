@@ -4,9 +4,18 @@ import { Types } from 'mongoose';
 export class CartRepository {
   async getCartByOwner(userId?: string, sessionId?: string): Promise<ICartDocument | null> {
     if (userId && Types.ObjectId.isValid(userId)) {
-      return CartModel.findOne({ userId: new Types.ObjectId(userId) })
+      let userCart = await CartModel.findOne({ userId: new Types.ObjectId(userId) })
         .populate('items.productId')
         .exec();
+
+      if (sessionId && (!userCart || userCart.items.length === 0)) {
+        const guestCart = await CartModel.findOne({ sessionId }).exec();
+        if (guestCart && guestCart.items.length > 0) {
+          return this.mergeCarts(sessionId, userId);
+        }
+      }
+
+      if (userCart) return userCart;
     }
     if (sessionId) {
       return CartModel.findOne({ sessionId }).populate('items.productId').exec();

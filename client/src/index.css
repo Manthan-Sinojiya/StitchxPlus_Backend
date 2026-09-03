@@ -95,7 +95,7 @@
 
   /* Standard Page Container */
   .site-container {
-    @apply max-w-7xl mx-auto px-[8px];
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
 
   /* Standard Major Section Padding */
