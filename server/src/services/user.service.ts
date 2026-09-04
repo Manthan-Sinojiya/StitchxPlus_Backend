@@ -41,7 +41,10 @@ export class UserService {
     return user.addresses || [];
   }
 
-  async addAddress(userId: string, addressData: Omit<IUserAddress, 'id' | '_id'>): Promise<IUserAddress[]> {
+  async addAddress(
+    userId: string,
+    addressData: Omit<IUserAddress, 'id' | '_id'>,
+  ): Promise<IUserAddress[]> {
     const user = await this.getUserById(userId);
     if (!user.addresses) user.addresses = [];
 
@@ -61,7 +64,9 @@ export class UserService {
     updateData: Partial<IUserAddress>,
   ): Promise<IUserAddress[]> {
     const user = await this.getUserById(userId);
-    const address = user.addresses?.find((a: any) => a._id?.toString() === addressId || a.id === addressId);
+    const address = user.addresses?.find(
+      (a: any) => a._id?.toString() === addressId || a.id === addressId,
+    );
 
     if (!address) {
       throw new AppError('Address not found', 404);
@@ -87,9 +92,11 @@ export class UserService {
 
   async getWishlist(userId: string): Promise<any[]> {
     const user = await UserModel.findById(userId).populate('wishlist.productId').exec();
+
     if (!user) {
       throw new AppError('User not found', 404);
     }
+
     return user.wishlist || [];
   }
 
@@ -99,6 +106,7 @@ export class UserService {
     }
 
     const user = await this.getUserById(userId);
+
     if (!user.wishlist) user.wishlist = [];
 
     const exists = user.wishlist.some(
@@ -115,24 +123,39 @@ export class UserService {
 
   async removeFromWishlist(userId: string, productId: string): Promise<any[]> {
     const user = await this.getUserById(userId);
+
     if (user.wishlist) {
       user.wishlist = user.wishlist.filter(
         (item: any) => item.productId.toString() !== productId,
       );
       await user.save();
     }
+
     return this.getWishlist(userId);
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const user = await UserModel.findById(userId).select('+password').exec();
+
     if (!user) {
       throw new AppError('User profile not found', 404);
     }
+
+    // Fix: ensure password exists before passing it to comparePassword
+    if (!user.password) {
+      throw new AppError('User password is not available', 400);
+    }
+
     const isMatch = await comparePassword(currentPassword, user.password);
+
     if (!isMatch) {
       throw new AppError('Current password is incorrect', 400);
     }
+
     user.password = await hashPassword(newPassword);
     await user.save();
   }
